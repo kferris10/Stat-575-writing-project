@@ -1,0 +1,79 @@
+Density in horizontal direction for LvL
+=============================================
+
+```{r setup, message = F, warning = F, error = F, echo = F, tidy = F, cache = F}
+# setwd("~/School/Stat 575 - Writing Project/Presentation/pres_slidify")
+require(knitr)
+opts_chunk$set(message = F, warning = F, error = F, results = 'markup',
+  tidy = F, cache = F, fig.width = 8, fig.height = 5, 
+  fig.align = "center", comment = "")
+```
+
+
+```{r setup2}
+require(ggplot2)
+require(mosaic)
+require(dplyr)
+set.seed(42)
+setwd("~/School/Stat 575 - Writing Project/toshow/Mark_1DComparison")
+load("LvL_Data.RData")
+```
+
+Here's the density plot in just the horizontal direction.  We're just looking at left-handed pitchers and left-handed batters here (that's what I had access to).
+
+```{r densplot, fig.width = 8, fig.height = 5}
+qplot(px, data = pit_LvL, group = resp_pit, geom = "density", colour = resp_pit) + 
+  xlab("Horizontal Direction (middle of the plate is zero)") + theme_bw()
+```
+
+Calculating observed differences
+
+```{r obsdiff}
+maxeval = 1.5 * max(pit_LvL$px)
+mineval = min(pit_LvL$px) - .5 * abs(min(pit_LvL$px))
+d1 <- density(pit_LvL$px[pit_LvL$resp_pit == "resp"], 
+              from = mineval, to = maxeval)
+d2 <- density(pit_LvL$px[pit_LvL$resp_pit == "not"], 
+              from = mineval, to = maxeval)
+obsdiff <- d1$y - d2$y
+```
+
+Simulating permutation distribution
+
+```{r permDistn}
+B <- 999
+diffs <- matrix(NA, nrow = length(d1$x), ncol = B)
+for(j in 1:B) {
+  dat1p <- data.frame(resp.pit = shuffle(pit_LvL$resp_pit), 
+                      px = pit_LvL$px)
+  d1p <- density(dat1p$px[dat1p$resp.pit == "resp"], 
+              from = mineval, to = maxeval)
+  d2p <- density(dat1p$px[dat1p$resp.pit == "not"], 
+              from = mineval, to = maxeval)
+  diffs[, j] <- d1p$y - d2p$y
+}
+
+```
+
+Calculating p-values
+
+```{r pvals}
+pvals <- matrix(NA, nrow = length(d1$x), ncol = 1)
+for(k in 1:length(d1p$x)) {
+  pvals[k] <- (999 * pdata(abs(obsdiff[k]), abs(diffs[k, ]), lower.tail = F) + 1) / 
+    (B+1)
+}
+
+plot(d1$x, pvals)
+lines(d1$x, p.adjust(pvals, "BH"), col = "red", lwd = 2)
+abline(h = 0.05, col = "blue")
+```
+
+
+```{r }
+x <- sum(abs(obsdiff))
+cumdiffs <- apply(diffs, 2, function(y) sum(abs(y)))
+```
+
+
+

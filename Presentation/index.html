@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>How Much Does a Pitcher Care About Earned Run Average?</title>
+  <meta charset="utf-8">
+  <meta name="description" content="How Much Does a Pitcher Care About Earned Run Average?">
+  <meta name="author" content="Kevin Ferris">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  <link rel=stylesheet href="./assets/css/ribbons.css"></link>
+
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="libraries/frameworks/io2012/js/slides" 
+    src="libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  <hgroup class="auto-fadein">
+    <h1>How Much Does a Pitcher Care About Earned Run Average?</h1>
+    <h2>Exploring Whether Earned Run Average (ERA) Affects Pitch Locations</h2>
+    <p>Kevin Ferris<br/>Advisors - Mark Greenwood, Mark Anderson, Steve Cherry</p>
+  </hgroup>
+  <article></article>  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1" style="background:;">
+  <hgroup>
+    <h2>Introduction</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>We are interested in how much pitchers in baseball value individual statistics.</p>
+
+<ul class = "build incremental">
+<li>Does an individual statistic (like ERA) have an influence on the pitcher that is not beneficial to team level performance?</li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-2" style="background:;">
+  <hgroup>
+    <h2>Background</h2>
+  </hgroup>
+  <article data-timings="">
+    <ul>
+<li><p>Pope, Devin G., and Maurice E. Schweitzer. &quot;Is Tiger Woods loss averse? Persistent bias in the face of experience, competition, and high stakes.&quot; The American Economic Review 101.1 (2011): 129-157.</p></li>
+<li><p>Parsons, Christopher A., et al. &quot;Strike three: discrimination, incentives, and evaluation.&quot; The American Economic Review 101.4 (2011): 1410-1435.</p></li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-3" style="background:;">
+  <hgroup>
+    <h2>The Idea</h2>
+  </hgroup>
+  <article data-timings="">
+    <ul class = "build incremental">
+<li><p>ERA is an individual-level statistic that is used to evaluate pitchers in baseball</p></li>
+<li><p>But, there are certain situations where ERA doesn&#39;t apply</p></li>
+<li><p>Do pitchers pitch differently in these situations than when it does apply?</p></li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-4" style="background:;">
+  <hgroup>
+    <h2>The Idea</h2>
+  </hgroup>
+  <article data-timings="">
+    <iframe src='http://m.mlb.com/shared/video/embed/embed.html?content_id=19792187&topic_id=6479266&width=800&height=500&property=mlb' width='800' height='500' frameborder='0'>
+</iframe>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-5" style="background:;">
+  <hgroup>
+    <h2>The Idea</h2>
+  </hgroup>
+  <article data-timings="">
+    <h3>Do pitchers pitch differently when they are responsible for the men on base than when they are not responsible?</h3>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-6" style="background:;">
+  <hgroup>
+    <h2>The Data</h2>
+  </hgroup>
+  <article data-timings="">
+    <iframe src='http://m.mlb.com/shared/video/embed/embed.html?content_id=27002963&topic_id=6479266&width=800&height=500&property=mlb' width='800' height='500' frameborder='0'></iframe>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-7">
+  <hgroup>
+    <h2>The Data</h2>
+  </hgroup>
+  <article>
+    <hr noshade size=4 color='red'>  
+    <p>Thanks to MLB, we have information on where each pitch is thrown.</p>
+  
+    <div class='left' style='float:left;width:48%'>
+     <iframe width = "500" height = "400" src = "lester.gif"></iframe>
+
+    </div>    
+    <div class='right' style='float:right;width:48%'>
+     <p><img src="assets/fig/pitch.png" title="plot of chunk pitch" alt="plot of chunk pitch" style="display: block; margin: auto;" /></p>
+
+    </div>
+  </article>
+</slide>
+<slide class="" id="slide-8" style="background:;">
+  <hgroup>
+    <h2>The Data</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>A 2D density estimation of 96,410 pitches of LHP vs LHB</p>
+
+<p><img src="assets/fig/alldata.png" title="plot of chunk alldata" alt="plot of chunk alldata" style="display: block; margin: auto;" /></p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-9" style="background:;">
+  <hgroup>
+    <h2>Methodology</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>Ideally, we&#39;d like to say that whether or not a pitcher is responsible affects pitch location</p>
+
+<p>\(resp \rightarrow (x,z)\) where (x,z) is the pitch location</p>
+
+<ul class = "build incremental">
+<li><p>For example
+<img src="assets/fig/demo.png" title="plot of chunk demo" alt="plot of chunk demo" style="display: block; margin: auto;" /></p></li>
+<li><p>\((x,z) \rightarrow resp\)</p></li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-10" style="background:;">
+  <hgroup>
+    <h2>Methodology</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>Our basic model uses location as the explanatory variable and whether or not the pitcher is responsible as the response variable</p>
+
+<p>\(Y \sim Bin(1, \pi)\)</p>
+
+<p>\(logit(\pi) = \beta_0 + f(x,z) + \epsilon\)</p>
+
+<p>Where \(f(x,z)\) is a smoothed function of \(x\) and \(z\)</p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-11">
+  <hgroup>
+    <h2>What We&#39;d Expect...</h2>
+  </hgroup>
+  <article>
+    <hr noshade size=4 color='red'>  
+      
+    <div class='left' style='float:left;width:48%'>
+     <p>If there is not a relationship</p>
+
+<p><img src="assets/fig/ecpectNo.png" title="plot of chunk ecpectNo" alt="plot of chunk ecpectNo" style="display: block; margin: auto;" /></p>
+
+    </div>    
+    <div class='right' style='float:right;width:48%'>
+     <p>If there is a relationship</p>
+
+<p><img src="assets/fig/expectYes.png" title="plot of chunk expectYes" alt="plot of chunk expectYes" style="display: block; margin: auto;" /></p>
+
+    </div>
+  </article>
+</slide>
+<slide class="" id="slide-12">
+  <hgroup>
+    <h2>Modeling with GAMs</h2>
+  </hgroup>
+  <article>
+    <hr noshade size=4 color='red'>  
+    <p>GAMs are models which use smoothers to fit a regression model</p>
+  
+    <div class='left' style='float:left;width:48%'>
+     <p><img src="assets/fig/gamex.png" title="plot of chunk gamex" alt="plot of chunk gamex" style="display: block; margin: auto;" /></p>
+
+<p><img src="assets/fig/gamex_mod.png" title="plot of chunk gamex_mod" alt="plot of chunk gamex_mod" style="display: block; margin: auto;" /></p>
+
+    </div>    
+    <div class='right' style='float:right;width:48%'>
+     <p><img src="assets/fig/gamex2.png" title="plot of chunk gamex2" alt="plot of chunk gamex2" style="display: block; margin: auto;" /></p>
+
+<p><img src="assets/fig/gamex2_mod.png" title="plot of chunk gamex2_mod" alt="plot of chunk gamex2_mod" style="display: block; margin: auto;" /></p>
+
+    </div>
+  </article>
+</slide>
+<slide class="" id="slide-13">
+  <hgroup>
+    <h2>Modeling with GAMs: Simulated Interactions</h2>
+  </hgroup>
+  <article>
+    <hr noshade size=4 color='red'>  
+    <p>edf = 17.26, p-value for a test of a null hypothesis of a flat surface is \(<0.00001\)</p>
+
+<p><img src="assets/fig/gamex3.png" title="plot of chunk gamex3" alt="plot of chunk gamex3" style="display: block; margin: auto;" /></p>
+  
+    <div class='left' style='float:left;width:48%'>
+     
+    </div>    
+    <div class='right' style='float:right;width:48%'>
+     
+    </div>
+  </article>
+</slide>
+<slide class="" id="slide-14" style="background:;">
+  <hgroup>
+    <h2>Revisiting What We Expect</h2>
+  </hgroup>
+  <article data-timings="">
+    <p><img src="assets/fig/expectYesAgain.png" title="plot of chunk expectYesAgain" alt="plot of chunk expectYesAgain" style="display: block; margin: auto;" /></p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-15" style="background:;">
+  <hgroup>
+    <h2>What We Found</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>Looking just at LHB vs LHP</p>
+
+<iframe width = "450" height = "450" src = "fit3d.gif"></iframe>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-16" style="background:;">
+  <hgroup>
+    <h2>\(\pm 2\) SEs</h2>
+  </hgroup>
+  <article data-timings="">
+    <p><img src="assets/fig/SEs.png" title="plot of chunk SEs" alt="plot of chunk SEs" style="display: block; margin: auto;" /></p>
+
+<p>edf = 5.96; p-value \(\approx 0.001\)</p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-17" style="background:;">
+  <hgroup>
+    <h2>Future Work</h2>
+  </hgroup>
+  <article data-timings="">
+    <ul>
+<li>Try to control for some additional covariates</li>
+<li>Maybe try a different approach</li>
+<li>Work on interpretation for other handedness combinations</li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-18" style="background:;">
+  <hgroup>
+    <h2>Conclusion</h2>
+  </hgroup>
+  <article data-timings="">
+    <ul class = "build incremental">
+<li>We wanted to see if pitch location is related to whether or not the pitcher is responsible for the men on base</li>
+<li>We found that there is a relationship</li>
+<li>This suggests that pitchers may pitch differently based on whether or not their ERA can be affected</li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-19" style="background:;">
+  <hgroup>
+    <h2>And We&#39;re Out</h2>
+  </hgroup>
+  <article data-timings="">
+    <iframe width="800" height="500" src="http://gifs.gifbin.com/1236681924_snail_transformers.gif" frameborder="0" allowfullscreen></iframe>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-20" style="background:;">
+  <hgroup>
+    <h2>References and Acknowledgements</h2>
+  </hgroup>
+  <article data-timings="">
+    <ul>
+<li><p>Pope, Devin G., and Maurice E. Schweitzer. &quot;Is Tiger Woods loss averse? Persistent bias in the face of experience, competition, and high stakes.&quot; The American Economic Review 101.1 (2011): 129-157.</p></li>
+<li><p>Parsons, Christopher A., et al. &quot;Strike three: discrimination, incentives, and evaluation.&quot; The American Economic Review 101.4 (2011): 1410-1435.</p></li>
+<li><p>R packages: <code>pitchRx</code> <code>dplyr</code> <code>mgcv</code></p></li>
+<li><p>Carson Sievert (2014). pitchRx: Tools for Harnessing MLBAM
+Gameday data and Visualizing PITCHf/x. R package version
+1.2.</p></li>
+<li><p>Hadley Wickham and Romain Francois (2014). dplyr: dplyr: a
+grammar of data manipulation. R package version 0.1.2.
+<a href="http://CRAN.R-project.org/package=dplyr">http://CRAN.R-project.org/package=dplyr</a></p></li>
+<li><p>Wood, S.N. (2006) Generalized Additive Models: An
+Introduction with R. Chapman and Hall/CRC.</p></li>
+<li><p>Joe Atwood</p></li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='Introduction'>
+         1
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=2 title='Background'>
+         2
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=3 title='The Idea'>
+         3
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=4 title='The Idea'>
+         4
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=5 title='The Idea'>
+         5
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=6 title='The Data'>
+         6
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=7 title='The Data'>
+         7
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=8 title='The Data'>
+         8
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=9 title='Methodology'>
+         9
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=10 title='Methodology'>
+         10
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=11 title='What We&#39;d Expect...'>
+         11
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=12 title='Modeling with GAMs'>
+         12
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=13 title='Modeling with GAMs: Simulated Interactions'>
+         13
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=14 title='Revisiting What We Expect'>
+         14
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=15 title='What We Found'>
+         15
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=16 title='\(\pm 2\) SEs'>
+         16
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=17 title='Future Work'>
+         17
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=18 title='Conclusion'>
+         18
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=19 title='And We&#39;re Out'>
+         19
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=20 title='References and Acknowledgements'>
+         20
+      </a>
+    </li>
+  </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- MathJax: Fall back to local if CDN offline but local image fonts are not supported (saves >100MB) -->
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [['$','$'], ['\\(','\\)']],
+        processEscapes: true
+      }
+    });
+  </script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <!-- <script src="https://c328740.ssl.cf1.rackcdn.com/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+  </script> -->
+  <script>window.MathJax || document.write('<script type="text/x-mathjax-config">MathJax.Hub.Config({"HTML-CSS":{imageFont:null}});<\/script><script src="libraries/widgets/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"><\/script>')
+</script>
+<!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>

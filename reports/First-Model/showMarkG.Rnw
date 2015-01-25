@@ -1,0 +1,73 @@
+\documentclass{article}
+
+\usepackage{verbatim}
+\usepackage[margin=.8in]{geometry}
+\usepackage{float}
+\usepackage{mathtools}
+\usepackage{amsmath}
+
+\ifdefined\knitrout
+\renewenvironment{knitrout}{\begin{footnotesize}}{\end{footnotesize}}
+ \else
+\fi
+
+\begin{document}
+
+<<rsetup, echo=FALSE, message=FALSE>>=
+require(knitr)
+opts_chunk$set(fig.width=8, fig.height=6, out.width='.8\\linewidth', 
+               dev='pdf', concordance=TRUE, fig.align = "center", 
+               echo = TRUE, fig.pos = "H", tidy = FALSE, message=FALSE, 
+               comment = "")
+options(replace.assign=TRUE,width=112, digits = 3, max.print="72",
+        show.signif.stars = FALSE)
+setwd("~/School/Stat 575 - Writing Project/toShow/First Model")
+require(mgcv)
+require(reshape2)
+require(plot3D)
+require(dplyr)
+load("FirstGAMmodel.Rdata")
+@
+
+The Data
+<<printing>>=
+pit_on
+@
+
+The Model
+<<printmod, eval=FALSE>>=
+fit3 <-bam(resp_pit ~ te(px, pz, k = 4, by = pb_hand) + pb_hand, 
+           family = "binomial", method = "GCV.Cp", gamma = 1.2, 
+           data = subset(pit_on, px > -1.2 & px < 1.2 & pz > 1 & pz < 4))
+@
+<<modsumm, echo=FALSE>>=
+summary(fit3)
+@
+
+Fitted Model for right-handed batters and pitchers
+<<modplot, echo=FALSE>>=
+new_pit <- expand.grid(
+  px = seq(-1, 1, by = .05), 
+  pz = seq(1.2, 3.8, by = .05))
+new_pit$pb_hand <- "L.L"
+pred_logit <- predict.gam(fit3, new_pit)
+new_pit$pred_prob <- exp(pred_logit) / (1 + exp(pred_logit))
+new_pit2 <- dcast(new_pit, px ~ pz, value.var = "pred_prob")
+par(mfrow = c(1,1))
+persp3D(seq(-1, 1, by = .05), 
+        seq(1.2, 3.8, by = .05), 
+        as.matrix(new_pit2[, -1]), 
+        xlab = "Horizontal Location", ylab = "Vertical Location", 
+        zlab = "Probability not Responsible", 
+        phi = 15, clab = "Probability", expand = .8)
+@
+
+Diagnostics(?)
+<<diagnostics>>=
+gam.check(fit3)
+@
+
+
+
+
+\end{document}

@@ -1,0 +1,402 @@
+---
+title       : How Much Does a Pitcher Care About Earned Run Average?
+subtitle    : Exploring Whether Earned Run Average (ERA) Affects Pitch Locations
+author      : Kevin Ferris
+job         : Advisors - Mark Greenwood, Mark Anderson, Steve Cherry
+framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : tomorrow      # 
+widgets     : [mathjax]            # {mathjax, quiz, bootstrap}
+mode        : selfcontained # {standalone, draft}
+
+---
+## Introduction
+
+```{r setup, message = F, warning = F, error = F, echo = F, tidy = F, cache = F}
+# setwd("~/School/Stat 575 - Writing Project/Presentation/pres_slidify")
+require(knitr)
+opts_chunk$set(message = F, warning = F, error = F, results = 'markup',
+  tidy = F, cache = F, fig.width = 8, fig.height = 5, 
+  fig.align = "center", comment = "", echo = FALSE)
+set.seed(42)
+```
+
+```{r load}
+require(reshape2)
+require(pitchRx)
+require(ggplot2)
+require(plot3D)
+require(mgcv)
+require(dplyr)
+require(animation)
+set.seed(42)
+```
+
+
+We are interested in how much pitchers in baseball value individual statistics.
+
+> * Does an individual statistic (like ERA) have an influence on the pitcher that is not beneficial to team level performance?
+
+---
+## Background
+
+* Pope, Devin G., and Maurice E. Schweitzer. "Is Tiger Woods loss averse? Persistent bias in the face of experience, competition, and high stakes." The American Economic Review 101.1 (2011): 129-157.
+
+* Parsons, Christopher A., et al. "Strike three: discrimination, incentives, and evaluation." The American Economic Review 101.4 (2011): 1410-1435.
+
+---
+## The Idea
+
+> * ERA is an individual-level statistic that is used to evaluate pitchers in baseball
+
+> * But, there are certain situations where ERA doesn't apply
+
+> * Do pitchers pitch differently in these situations than when it does apply?
+
+---
+## The Idea
+
+<iframe src='http://m.mlb.com/shared/video/embed/embed.html?content_id=19792187&topic_id=6479266&width=800&height=500&property=mlb' width='800' height='500' frameborder='0'>
+</iframe>
+
+<!--
+The fielder should have caught the ball so this batter should have been out.  The batter reached on base through an error so the pitcher isn't responsible for him.  As a result, the pitcher's ERA isn't affected if this batter scores.
+
+There are other situations in baseball where the pitcher is not resposible if the batter scores, but I won't go into detail with those.
+-->
+
+
+
+---
+## The Idea
+
+### Do pitchers pitch differently when they are responsible for the men on base than when they are not responsible? ###
+
+---
+## The Data
+
+<iframe src='http://m.mlb.com/shared/video/embed/embed.html?content_id=27002963&topic_id=6479266&width=800&height=500&property=mlb' width='800' height='500' frameborder='0'></iframe>
+
+
+--- &twocol
+## The Data
+
+Thanks to MLB, we have information on where each pitch is thrown.
+
+*** =left
+
+<iframe width = "500" height = "400" src = "lester.gif"></iframe>
+
+```{r ani.pitch, eval=FALSE}
+saveGIF({animateFX(lest_lind, interval = 0.04, point.alpha = 1/2)})
+```
+
+*** =right
+
+```{r pitch, fig.height=4.5, fig.width=4.5}
+p <- data.frame( px = 0.634, pz = 2.305, sh = factor(1))
+ggplot(p) + 
+  geom_segment(aes(x=-0.75, y=1.75, xend = -0.75, yend = 3.35)) + 
+  geom_segment(aes(x=-0.75, y=3.35, xend = 0.75, yend = 3.35)) + 
+  geom_segment(aes(x=0.75, y=3.35, xend = 0.75, yend = 1.75)) + 
+  geom_segment(aes(x=0.75, y=1.75, xend = -0.75, yend = 1.75)) +
+  geom_point(aes(x=px, y=pz, shape = sh), size = I(4)) + 
+  scale_shape(solid = F, guide = FALSE) + 
+  xlim(-1.5, 1.5) + ylim(1, 4) + theme_bw() + 
+  labs(x = "Horizontal Location", 
+       y = "Vertical Location", 
+       title = "Pitch Location for Lester's Strikeout")
+```
+
+---
+## The Data
+
+A 2D density estimation of 96,410 pitches of LHP vs LHB
+
+```{r alldata, fig.height=6, fig.width=6}
+setwd("~/School/Stat 575 - Writing Project/R_Code_Data/Final_Stuff")
+load("LvL_Data.Rdata")
+p1 <- ggplot(pit_LvL, aes(x = px, y = pz)) + 
+  stat_density2d(geom = "tile", contour = FALSE, 
+               aes(fill = ..density.., alpha = ..density..)) + 
+  geom_segment(aes(x=-0.8, y=1.5, xend = -0.8, yend = 3.5)) + 
+  geom_segment(aes(x=-0.8, y=3.5, xend = 0.8, yend = 3.5)) + 
+  geom_segment(aes(x=0.8, y=3.5, xend = 0.8, yend = 1.5)) + 
+  geom_segment(aes(x=0.8, y=1.5, xend = -0.8, yend = 1.5)) + 
+  guides(fill = FALSE, alpha = FALSE) + theme_bw() + 
+  scale_fill_gradient(low = "#FF99FF", high = "#FF0000") + 
+  labs(x = "Horizontal Location", 
+  y = "Vertical Location", 
+	title = "Pitch Locations for LHP vs LHB")
+p1
+```
+
+
+---
+## Methodology
+
+Ideally, we'd like to say that whether or not a pitcher is responsible affects pitch location
+
+$resp \rightarrow (x,z)$ where (x,z) is the pitch location
+
+> * For example
+```{r demo, fig.height = 4, fig.width = 7}
+ggplot() + 
+  geom_histogram(aes(x = rnorm(1000, -3), y = ..density..), 
+                 colour = "darkgreen", fill = "lightgreen") + 
+  geom_histogram(aes(x = rnorm(1000, 3), y = ..density..), 
+                 colour = "darkred", fill = "lightsalmon2") + 
+  theme_bw() + 
+  labs(x = "X", y = "") + xlim(-6, 6)
+```
+
+
+> * $(x,z) \rightarrow resp$
+
+
+
+```{r expl2, eval=FALSE}
+That is, different locations are associated with different probabilities of a pitcher being responsible
+```
+
+---
+## Methodology
+
+Our basic model uses location as the explanatory variable and whether or not the pitcher is responsible as the response variable
+
+
+$Y \sim Bin(1, \pi)$
+
+
+
+$logit(\pi) = \beta_0 + f(x,z) + \epsilon$
+
+
+
+Where $f(x,z)$ is a smoothed function of $x$ and $z$
+
+
+--- &twocol
+## What We'd Expect...
+
+*** =left
+
+If there is not a relationship
+
+```{r ecpectNo, fig.width=6, fig.height=6}
+loc.no <- expand.grid(
+  px = seq(-1, 1, by = .05), 
+  pz = seq(-1, 1, by = .05))
+loc.no$prog <- (-.5 * loc.no$px ^ 2 - .5 * loc.no$pz ^ 2) / 100 + 0.1
+loc2.no <- dcast(loc.no, px ~ pz, value.var = "prog")
+par(mfrow = c(1,1))
+persp3D(seq(-1, 1, by = .05), 
+        seq(-1, 1, by = .05), 
+        as.matrix(loc2.no[, -1]), zlim = c(0, 1), 
+        colkey = FALSE, colvar = NULL, 
+        xlab = "Horizontal Location", ylab = "Vertical Location", 
+        zlab = "Probability not Responsible", 
+        phi = 15, clab = "Probability", expand = .8)
+```
+
+*** =right
+
+If there is a relationship
+
+```{r expectYes, fig.width=6, fig.height=6}
+loc <- expand.grid(
+  px = seq(-1, 1, by = .05), 
+  pz = seq(-1, 1, by = .05))
+loc$prog <- (-.5 * loc$px ^ 2 - .5 * loc$pz ^ 2 + 1.5) / 20
+loc2 <- dcast(loc, px ~ pz, value.var = "prog")
+par(mfrow = c(1,1))
+persp3D(seq(-1, 1, by = .05), 
+        seq(-1, 1, by = .05), 
+        as.matrix(loc2[, -1]), zlim = c(0, 0.2), 
+        colkey = FALSE, 
+        xlab = "Horizontal Location", ylab = "Vertical Location", 
+        zlab = "Probability not Responsible", 
+        phi = 15, clab = "Probability", expand = .8)
+```
+
+
+--- &twocol
+## Modeling with GAMs
+
+GAMs are models which use smoothers to fit a regression model
+
+*** =left
+```{r gamex, fig.height=3.5, fig.width=4, eval = T}
+require(ggplot2)
+require(mgcv)
+x1 <- runif(100, 0, 20)
+x2 <- runif(100, 0, 10)
+y1 <- (220 - 8 * x1 - 3 * x1^2 + 0.4 * x1^3 - 0.012 * x1^4) / 100 + 
+  rnorm(100, 0, .3)
+qplot(x1, y1) + theme_bw()
+```
+
+```{r gamex_mod, fig.height=3.5, fig.width=4, eval = T}
+fit1 <- gam(y1 ~ s(x1, k = 5, bs = "ts"))
+plot(fit1, residuals = TRUE)
+```
+
+
+*** =right
+
+```{r gamex2, fig.height=3.5, fig.width=4}
+x2 <- runif(100, 0, 10)
+y2 <- 2 - 1.35 * x2 + 0.5 * x2^2 - 0.038 * x2^3 + rnorm(100, 0, .3)
+qplot(x2, y2) + theme_bw()
+```
+
+```{r gamex2_mod, fig.height=3.5, fig.width=4, eval = T}
+fit2 <- gam(y2 ~ s(x2, k = 5, bs = "ts"))
+plot(fit2, residuals = TRUE)
+```
+
+--- &twocol 
+## Modeling with GAMs: Simulated Interactions
+
+edf = 17.26, p-value for a test of a null hypothesis of a flat surface is $<0.00001$
+
+```{r gamex3, fig.height = 6, fig.width=9}
+ y3 <- y1 + y2 - 0.05 * x1 * x2
+fit3 <- gam(y3 ~ te(x1, x2, bs = "ts", k = 5))
+vis.gam(fit3)
+```
+
+
+---
+## Revisiting What We Expect
+
+```{r expectYesAgain, fig.width=8, fig.height=8}
+loc <- expand.grid(
+  px = seq(-1, 1, by = .05), 
+  pz = seq(-1, 1, by = .05))
+loc$prog <- (-.5 * loc$px ^ 2 - .5 * loc$pz ^ 2 + 1.5) / 20
+loc2 <- dcast(loc, px ~ pz, value.var = "prog")
+par(mfrow = c(1,1))
+persp3D(seq(-1, 1, by = .05), 
+        seq(-1, 1, by = .05), 
+        as.matrix(loc2[, -1]), zlim = c(0, 0.2), 
+        colkey = FALSE, 
+        xlab = "Horizontal Location", ylab = "Vertical Location", 
+        zlab = "Probability not Responsible", 
+        phi = 15, clab = "Probability", expand = .8)
+```
+
+---
+## What We Found
+
+Looking just at LHB vs LHP
+
+<iframe width = "450" height = "450" src = "fit3d.gif"></iframe>
+
+```{r 3dplot, eval=FALSE}
+px.seq <- seq(-.75, .75, by = .05)
+pz.seq <- seq(1.75, 3.35, by = .05)
+new_pit <- expand.grid(
+  px = px.seq, 
+  pz = pz.seq)
+new_pit$pb_hand <- "L.L"
+pred_logit <- predict.gam(fitL.L, new_pit)
+new_pit$pred_prob <- exp(pred_logit) / (1 + exp(pred_logit))
+new_pit2 <- dcast(new_pit, px ~ pz, value.var = "pred_prob")
+par(mfrow = c(1,1))
+persp3D(px.seq, 
+        pz.seq, 
+        as.matrix(new_pit2[, -1]), 
+        xlab = "Horizontal Location", ylab = "Vertical Location", 
+        zlab = "Probability not Responsible", colkey = FALSE, 
+        phi = 15, clab = "Probability", expand = .8)
+image3D(z = 0.175, x = px.seq, y = pz.seq, 
+        add = TRUE, colvar = as.matrix(new_pit2[, -1]), colkey = FALSE)
+contour3D(z = 0.175 + .0001, x = px.seq, y = pz.seq, colkey = FALSE, 
+          colvar = as.matrix(new_pit2[, -1]), add = TRUE, col = "black")
+```
+
+```{r 3dgif, eval=FALSE}
+px.seq <- seq(-.75, .75, by = .05)
+pz.seq <- seq(1.75, 3.35, by = .05)
+new_pit <- expand.grid(
+  px = px.seq, 
+  pz = pz.seq)
+new_pit$pb_hand <- "L.L"
+pred_logit <- predict.gam(fitL.L, new_pit)
+new_pit$pred_prob <- exp(pred_logit) / (1 + exp(pred_logit))
+new_pit2 <- dcast(new_pit, px ~ pz, value.var = "pred_prob")
+saveGIF({
+  par(mai = c(0.1,0.1,0.1,0.1))
+  for(i in seq(1, 100, by = 1)){
+    persp3D(px.seq, 
+            pz.seq, 
+            as.matrix(new_pit2[, -1]), zlim = c(.175, .1915), 
+            xlab = "Horizontal Location", ylab = "Vertical Location", 
+            zlab = "Probability not Responsible", colkey = FALSE, 
+            phi = 15, ltheta = 120, theta = i, lphi = -i, shade = 0.5, 
+            clab = "Probability", expand = .8, plot = TRUE)
+    image3D(z = 0.175, x = px.seq, y = pz.seq, colkey = FALSE, 
+            add = TRUE, colvar = as.matrix(new_pit2[, -1]))
+    contour3D(z = 0.175 + .0001, x = px.seq, y = pz.seq, colkey = FALSE, 
+              colvar = as.matrix(new_pit2[, -1]), add = TRUE, col = "black")
+    }
+  }, interval = 0.1, ani.width = 500, ani.height = 500)
+```
+
+
+---
+## $\pm 2$ SEs
+
+```{r SEs, fig.width=10, fig.height=7}
+setwd("~/School/Stat 575 - Writing Project/R_code_data/Final_Stuff")
+load("LvL_model.Rdata")
+vis.gam(fitL.L, c("px", "pz"), se = 2)
+```
+
+edf = 5.96; p-value $\approx 0.001$
+
+---
+## Future Work
+
+* Try to control for some additional covariates
+* Maybe try a different approach
+* Work on interpretation for other handedness combinations
+
+---
+## Conclusion
+
+> * We wanted to see if pitch location is related to whether or not the pitcher is responsible for the men on base
+> * We found that there is a relationship
+> * This suggests that pitchers may pitch differently based on whether or not their ERA can be affected
+
+---
+## And We're Out
+
+<iframe width="800" height="500" src="http://gifs.gifbin.com/1236681924_snail_transformers.gif" frameborder="0" allowfullscreen></iframe>
+
+---
+## References and Acknowledgements
+
+* Pope, Devin G., and Maurice E. Schweitzer. "Is Tiger Woods loss averse? Persistent bias in the face of experience, competition, and high stakes." The American Economic Review 101.1 (2011): 129-157.
+
+* Parsons, Christopher A., et al. "Strike three: discrimination, incentives, and evaluation." The American Economic Review 101.4 (2011): 1410-1435.
+
+* R packages: `pitchRx` `dplyr` `mgcv`
+
+* Carson Sievert (2014). pitchRx: Tools for Harnessing MLBAM
+  Gameday data and Visualizing PITCHf/x. R package version
+  1.2.
+  
+* Hadley Wickham and Romain Francois (2014). dplyr: dplyr: a
+  grammar of data manipulation. R package version 0.1.2.
+  http://CRAN.R-project.org/package=dplyr
+  
+* Wood, S.N. (2006) Generalized Additive Models: An
+  Introduction with R. Chapman and Hall/CRC.
+
+* Joe Atwood
+
+
+
+
