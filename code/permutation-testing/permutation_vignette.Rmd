@@ -6,7 +6,11 @@ output: html_document
 
 ```{r knitrsetup, echo=FALSE, message=FALSE, warning=FALSE}
 library(knitr)
-opts_chunk$set(fig.align = 'center', fig.height = 5, fig.width = 8, tidy = F)
+opts_chunk$set(fig.align = 'center', 
+               fig.height = 5, 
+               fig.width = 8, 
+               tidy = F, 
+               cache = F)
 ```
 
 
@@ -18,73 +22,75 @@ library(scales)
 library(MASS)
 library(plot3D)
 library(reshape2)
-library(plyr)
 library(mosaic)
+library(magrittr)
 library(dplyr)
 library(tidyr)
 set.seed(42)
-setwd("~/School/Stat 575 - Writing Project/permutation")
-load("LvL_Data.RData")
+load("data/LvL_Data.RData")
 ```
 
 There are two functions in the `permutation_functions.R` script.  `getObsDiff` calculates the observed difference in densities.  You have to pass in the number of grid points in each direction.  It uses the `kde2d` function from the MASS package.
 
 ```{r obsdiff, message=FALSE}
-source("permutation_functions.R")
+source("code/permutation-testing/permutation_functions.R")
 n <- 25 # number of grid points in x and y directions
-obs.diff <- getObsDiff(n)
-dim(obs.diff) # one density for each (x,y) grid point
+obs_diff2 <- getObsDiff(n)
+dim(obs_diff) # one density for each (x,y) grid point
 
 # plot of observed differences
-persp3D(x = 1:n, y = 1:n, z = obs.diff)
+persp3D(x = 1:n, y = 1:n, z = obs_diff)
 ```
 
 The second function `permuteDensities` permutes the data and calculates the difference in permuted densities.  `B` is the number of bootstrap replicates to perform, `npoints` is the number of grid points in each direction.  It returns a 3D array.
 
 ```{r permdiff}
-perm.dens <- permuteDensities(B = 15, npoints = n)
-dim(perm.dens) # array of n*n*B dimensions
+perm_dens <- permuteDensities(B = 15, npoints = n)
+dim(perm_dens) # array of n*n*B dimensions
 
 # plot of one permuted density
-persp3D(x = 1:n, y = 1:n, z = perm.dens[, , 1])
+persp3D(x = 1:n, y = 1:n, z = perm_dens[, , 1])
 ```
 
 This chunk of code then calculates the p-values at each grid point.
 
-
 ```{r pvals}
 # calculating p-values from permutations
-pvals <- matrix(NA, nrow = n, ncol = n) %>% data.frame() %>% tbl_df()
+pvals <- matrix(NA, nrow = n, ncol = n) %>% 
+  data.frame() %>% tbl_df()
 for(i in 1:n) {
   for(j in 1:n) {
-    pvals[i,j] <- pdata(abs(obs.diff[i, j]), abs(perm.dens[i, j, ]), lower.tail = F)
-    }
+    pvals[i,j] <- pdata(abs(obs_diff[i, j]), 
+                        abs(perm_dens[i, j, ]), 
+                        lower.tail = F)
   }
+}
 
 # turning into a long data.frame
-pvals.melt <- melt(pvals, variable.name = "location", value.name = "pval")
-pvals.melt$col <- rep(1:n, each = n)
-pvals.melt$row <- rep(1:n, n)
-# pvals.melt <- pvals %>% 
-#   gather(location, pvals) %>% 
-#   mutate(col = rep(1:n, each = n), 
-#          row = rep(1:n, n))
+pvals_melt <- pvals %>% 
+  gather(location, pval) %>% 
+  mutate(col = rep(1:n, each = n), 
+         row = rep(1:n, n)) %>% 
+  select(row, col, pval)
 ```
 
 Here we plot the observed p-values by location
 
 ```{r observed_pvals}
-qplot(row, col, data = pvals.melt, colour = pval) + 
-  scale_colour_gradient2(low = muted("red"), mid = "grey", high = muted("blue"), midpoint = .2)
+qplot(row, col, data = pvals_melt, colour = pval) + 
+  scale_colour_gradient2(low = muted("red"), mid = "grey", high = muted("blue"), 
+                         midpoint = .2)
 ```
 
 And here we plot the p-values by whether they are greater than 0.05
 
 ```{r cutoff_pvals}
-pvals.melt <- pvals.melt %>% 
-  mutate(signif = ifelse(pvals < .05, "significant", "insignificant") %>% 
-           factor(levels = c("significant", "insignificant")))
-qplot(row, col, data = pvals.melt, colour = signif)
+pvals_melt <- pvals_melt %>% 
+  mutate(signif = ifelse(pvals < .05, "mouse", "elephant") %>% 
+           factor(levels = c("mouse", "elephant")))
+qplot(row, col, data = pvals_melt, colour = signif) + 
+  labs(x = "Horizontal Location", y = "Vertical Location") + 
+  
 ```
 
 
