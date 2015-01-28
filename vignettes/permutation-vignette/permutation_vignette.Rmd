@@ -1,0 +1,74 @@
+---
+title: "Updated Permutation Example"
+date: "Wednesday, January 28, 2015"
+output: 
+  html_document:
+    theme: cosmo
+    highlight: tango
+---
+
+```{r knitrsetup, echo=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+opts_chunk$set(fig.align = 'center', 
+               fig.height = 5, 
+               fig.width = 8, 
+               tidy = F, 
+               cache = F)
+```
+
+
+The packages used and loading the data set.  You'll have to change the path here.
+
+```{r setup, echo=TRUE, message=FALSE, warning=FALSE}
+library(MASS)
+library(reshape2)
+library(mosaic)
+library(magrittr)
+library(dplyr)
+library(tidyr)
+set.seed(42)
+load("LvL_Data.RData")
+source("permutation_functions.R")
+```
+
+I've re-written the permutation functions here to make it a little bit easier (hopefully) to get p-values.  Eventually, I think I'll just make an R package of all the miscellaneous code we're running to make things easier.  For now, though, you'll just have to source in the functions.  Everything is now evaluated using functions in the `permutation_functions.R` script.  All you have to do is
+
+1) calculate the observed difference in densities
+```{r obs-diff}
+npoints <- 15 # number of grid points to calculate densities
+B <- 10       # number of permutations
+obs_diff <- dens_diff(npoints, data = pit_LvL)
+```
+
+2) Run the permutations and calculate the p-values.  This is now one step.
+```{r perm-pvals}
+pvals <- perm_pvals(B, npoints, data = pit_LvL, obs_diff = obs_diff)
+```
+
+3) Here is where we'll want to make sure to save the object.  
+```{r save-pvals, eval=FALSE}
+save(pvals, file = "my-location.RData")
+```
+
+4) If you want, you can do some fun visualizations.  Here we plot the observed p-values by location
+
+```{r plots, message = FALSE}
+library(ggplot2)
+library(scales)
+pvals2 <- pvals_to_long(pvals) 
+
+# actual size
+qplot(row, col, data = pvals2, colour = pval) + 
+  scale_colour_gradient2(low = muted("red"), mid = "grey", high = muted("blue"), 
+                         midpoint = .2)
+
+# whether they're greater than 0.05
+pvals2 <- pvals2 %>% 
+  mutate(size = ifelse(pvals < .05, "mouse", "elephant") %>% 
+           factor(levels = c("mouse", "elephant")))
+qplot(row, col, data = pvals2, colour = size) + 
+  labs(x = "Horizontal Location", y = "Vertical Location") + 
+  theme_bw()
+```
+
+
