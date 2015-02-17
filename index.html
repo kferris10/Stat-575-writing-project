@@ -76,10 +76,10 @@ img {
 </div>
 <div id="explanation" class="section level1">
 <h1>Explanation</h1>
-<p>One of the statistics that people have been using for decades to evaluate pitchers is Earned Runs Average (ERA) (cite?). A pitcher’s job in baseball is to prevent the opposing team from scoring runs. So ERA measure the number of runners that the pitcher is responsible for (a pitcher is responsible for a runner if that batter gets a hit or a walk off of the pitcher) and scales it to account for the number of innings pitched. While ERA values have changed over time, an ERA of 3 has typically been the mark of a good pitcher, an ERA of 4 is average, and an ERA above 4.7 is poor.</p>
+<p>One of the statistics that people have been using for decades to evaluate pitchers is Earned Runs Average (ERA) (cite?). A pitcher’s job in baseball is to prevent the opposing team from scoring runs. ERA is used to measure the number of runners that the pitcher is responsible for (a pitcher is responsible for a runner if that batter gets a hit or a walk off of the pitcher) and scales it to account for the number of innings pitched. While ERA values have changed over time, an ERA of 3 has typically been the mark of a good pitcher, an ERA of 4 is average, and an ERA above 4.7 is poor.</p>
 <p><em>Graph of ERA over time?</em></p>
 <p>The strange thing about this statistic is that only accounts for batters who scored <em>that a pitcher is responsible for</em> rather than all batters who the pitcher faces. A pitcher is deemed “not responsible”&quot; for a batter if, for example, a fielder makes an error and allows the runner to reach base. Because it is not the pitcher’s fault that the runner reached base (due to the fielding error), the theory behind ERA is that the pitcher should not be penalized if that runner scores.</p>
-<p>However, this creates a potential problem with the incentives present for the pitcher: because ERA is one of the primary tools used to evaluate pitchers, in the situations when ERA does not apply the incentives are not as strong. A fair amount of research has been done to evaluate the effects that incentives have in sports (come back and discuss more thoroughly).</p>
+<p>However, this creates a potential problem with the incentives present for the pitcher: because ERA is one of the primary tools used to evaluate pitchers, in the situations when ERA does not apply the incentives are not as strong. <em>A fair amount of research has been done to evaluate the effects that incentives have in sports (come back and discuss more thoroughly).</em></p>
 <p>We theorize that pitchers may pitch differently when ERA applies (when the pitcher is responsible for the runners) than when it does not. Specifically, we believe that when a pitcher is not responsible for the men on base, he will be more likely to pitch in “dangerous locations” — over the middle of the plate or far from the strike zone. Conversely, when a pitcher is responsible for the men on base, he will be somewhat more likely to pitch around the edges of the strike zone. <strong>May have to come back and think about these expectations a bit more</strong></p>
 <p>Maybe a graph like the one <a href="http://chessa015.github.io/575_Presentation/#12">here</a>?</p>
 <p>The difficulty of assigning credit or blame to individuals when success is measured on the group level is not unique to baseball. Firms measure their success by the company’s profit line, but they must internally decide which employees helped or hindered the profit most of all.</p>
@@ -91,13 +91,13 @@ img {
 <h2>Raw</h2>
 <p>Starting in the 2006 playoffs, Major League Baseball began using pitch tracking cameras to record information about each pitch thrown in a game. By 2008, these cameras were implemented in every ball park in the majors. These cameras track velocity, movement, release point, spin, and pitch location at the moment each pitch enters the strike zone. MLB’s Gameday API provides these data (known as PITCHF/x data) for free in an XML format <a href="http://gd2.mlb.com/components/game/mlb/">online</a>. They also provide which runners (if any) are on base for each pitch.</p>
 <p>For example, on May 10, 2013 Jon Lester struck out Adam Lind with an 88 mph cut fastball to end the game. The pitch was located low and inside, and can be viewed located <a href="http://m.mlb.com/video/?content_id=27002963&amp;topic_id=6479266">here</a>. Using the coordinates provided by the PITCHF/x data, we can visualize the location of the pitch as it entered the strike zone in the plot below. The data also tell us that there were two balls, two strikes, two outs, and no men on base when the pitch occurred.</p>
-<p>plot of pitch</p>
+<p><em>plot of pitch</em></p>
 <p>Using the R package <code>pitchRx</code> <span class="citation">(C. Sievert and Sievert 2014)</span>, the regular season PITCHF/x data from 2008 to 2014 were downloaded on (whatever date we finally get 2014 data).</p>
 </div>
 <div id="cleaned" class="section level2">
 <h2>Cleaned</h2>
-<p>The question of interest for this project was whether baseball pitchers pitch differently when they were responsible for the runners on base. So we began by extracting all the pitches thrown when runners were on base. Therefore, in our data, each observation is a single pitch that occurred when there was at least one runner on base. For each observation, we recorded whether the pitcher was responsible for the men on base. If a pitcher was responsible for one man but not responsible for another, we deemed him responsible.</p>
-<p>Does this make sense?</p>
+<p>The question of interest for this project was whether baseball pitchers pitch differently when they are responsible for the runners on base. We began by extracting all the pitches thrown when runners were on base. Therefore, in our data, each observation is a single pitch that occurred when there was at least one runner on base. For each observation, we recorded whether the pitcher was responsible for the men on base. In situations where there were multiple men on base and the pitcher was responsible for some but not all of them, the pitcher was deemed responsible.</p>
+<p><em>Does this make sense?</em></p>
 <p>A pitcher was deemed responsible if, according to the MLB Official Rules, the pitcher would not be held accountable if the runner had scored. There are several circumstances under which a pitcher would not be held accountable. They are briefly summarized below. For further explanation, see (<a href="http://mlb.mlb.com/mlb/official_info/official_rules/official_scorer_10.jsp">http://mlb.mlb.com/mlb/official_info/official_rules/official_scorer_10.jsp</a>).</p>
 <ol style="list-style-type: decimal">
 <li>batter reaches on a hit or otherwise after his time at bat is prolonged by a muffed foul fly (can’t actually determine this from PITCHf/x)</li>
@@ -107,7 +107,7 @@ img {
 <li>a relief pitcher inherits runners on base</li>
 </ol>
 <p>This resulted in (blank) pitches where the pitcher was responsible and (blank) pitches where the pitcher was not responsible. A small portion of the data set is presented below.</p>
-<p>Table of data</p>
+<p><em>Table of data</em></p>
 <p>Data were cleaned using the <code>dplyr</code> package in R <span class="citation">(Wickham and Francois 2014)</span>.</p>
 </div>
 </div>
@@ -115,14 +115,14 @@ img {
 <h1>Methodology</h1>
 <div id="how-to-test-the-idea" class="section level2">
 <h2>How to Test the Idea</h2>
-<p>Will need to come back and discuss handedness</p>
+<p><em>Will need to come back and discuss handedness</em></p>
 <p>Figure (below) shows a 2d kernel density estimate of pitch location in 2014 <span class="citation">(Venables and Ripley 2002)</span>. It appears that most pitches are thrown <em>in the zone and down</em> (or whatever the plot shows - should be over the plate, down, away). To test our hypothesis, we would like to see if pitch location is different when pitchers are responsible versus when they are not. So we began by fitting (is this the correct word?) density estimates for each situation. The results are displayed below, along with the difference in the two densities.</p>
 <p>Plot &amp; Discussion</p>
 </div>
 <div id="permutation-testing" class="section level2">
 <h2>Permutation Testing</h2>
 <p>For this analysis, the null hypothesis is that the density surfaces in the two situations are the same, and the alternative is that they are different. According to that null hypothesis, pitch location is not related to whether or not pitchers are responsible for the men on base. Therefore, under the null hypothesis, the labels are arbitrary and have no meaning.</p>
-<p>In this setting, permutation testing can be used to help test these hpotheses. Because the labels are arbitrarily assigned under the null, they can be permuted (randomly reassigned) to form a permuted dataset which is just as likely have occurred under the null hypothesis.</p>
+<p>In this setting, permutation testing can be used to help test these hpotheses. Because the labels are arbitrarily assigned under the null, they can be permuted (randomly reassigned) to form a permuted dataset which is just as likely have occurred under the null hypothesis. By repeating this process many times, a distribution of permuted densities can be constructed. This distribution represents the likely values of the density surface at each point under the null hypothesis. The observed density can be compared to this distribution of permuted densities at each grid point. In these comparisons, the proportion of times a permuted density is more extreme than the observed density becomes the p-value. This creates a grid of <span class="math">\(n \times n\)</span> p-values.</p>
 <p>Explain how to test using pemutations.</p>
 </div>
 <div id="adjusting-for-multiple-comparisons" class="section level2">

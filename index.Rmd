@@ -3,9 +3,9 @@ title: "Does a Pitcher Care About His Earned Run Average?"
 author: "Kevin Ferris"
 date: "Saturday, October 11, 2014"
 output:
-  pdf_document: default
   html_document:
     theme: cosmo
+  pdf_document: default
 bibliography: bibliography.bib
 ---
 
@@ -100,7 +100,7 @@ Plot & Discussion
 
 For this analysis, the null hypothesis is that the density surfaces in the two situations are the same, and the alternative is that they are different. According to that null hypothesis, pitch location is not related to whether or not pitchers are responsible for the men on base.  Therefore, under the null hypothesis, the labels are arbitrary and have no meaning.  
 
-In this setting, permutation testing can be used to help test these hpotheses.  Because the labels are arbitrarily assigned under the null, they can be permuted (randomly reassigned) to form a permuted dataset which is just as likely have occurred under the null hypothesis.  
+In this setting, permutation testing can be used to help test these hpotheses.  Because the labels are arbitrarily assigned under the null, they can be permuted (randomly reassigned) to form a permuted dataset which is just as likely have occurred under the null hypothesis.  By repeating this process many times, a distribution of permuted densities can be constructed.  This distribution represents the likely values of the density surface at each point under the null hypothesis.  The observed density can be compared to this distribution of permuted densities at each grid point.  In these comparisons, the proportion of times a permuted density is more extreme than the observed density becomes the p-value.  This creates a grid of $n \times n$ p-values.
 
 
 Explain how to test using pemutations.
