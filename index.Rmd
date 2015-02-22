@@ -4,12 +4,13 @@ author: "Kevin Ferris"
 date: "Saturday, October 11, 2014"
 output:
   html_document:
-    theme: cosmo
+    theme: journal
+    number_sections: true
   pdf_document: default
 bibliography: bibliography.bib
 ---
 
-```{r setup, echo=FALSE, warning=FALSE, message=FALSE, eval = FALSE}
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE, eval = FALSE, cache=FALSE}
 library(ggplot2)
 library(knitr)
 opts_chunk$set(echo = FALSE, 
@@ -19,7 +20,11 @@ opts_chunk$set(echo = FALSE,
                tidy = FALSE, 
                fig.height = 5, 
                fig.width = 8, 
-               fig.align = "center")
+               fig.align = "center", 
+               size = "small", 
+               digits = 3)
+options(show.signif.stars = F, 
+        digits = 3)
 ```
 
 # Introduction
@@ -102,12 +107,11 @@ For this analysis, the null hypothesis is that the density surfaces in the two s
 
 In this setting, permutation testing can be used to help test these hpotheses.  Because the labels are arbitrarily assigned under the null, they can be permuted (randomly reassigned) to form a permuted dataset which is just as likely have occurred under the null hypothesis.  By repeating this process many times, a distribution of permuted densities can be constructed.  This distribution represents the likely values of the density surface at each point under the null hypothesis.  The observed density can be compared to this distribution of permuted densities at each grid point.  In these comparisons, the proportion of times a permuted density is more extreme than the observed density becomes the p-value.  This creates a grid of $n \times n$ p-values.
 
+## Adjusting for Multiple Testing
 
-Explain how to test using pemutations.
+Analyzing $n \times n$ p-values creates a multiple testing scenario.  Testing each p-value at a given significance level ($\alpha$), sets the probability of rejecting the null hypothesis when it is true to be $(100 * \alpha)\%$.  This controls the Type I Error Probability for any single test.  So for each of the $n \times n$ p-values the Type I Error rate is controlled for that test.  For all of the tests, however, the *family-wise error rate* (the probability of a Type I error for any of the $n \times n$ tests) is not controlled.  A multiple correction procedure was implemented to hold the family-wise error rate constant.
 
-## Adjusting for Multiple Comparisons
-
-More discussion!
+*More discussion! about the actual procedure we'll use*
 
 # Results?
 
