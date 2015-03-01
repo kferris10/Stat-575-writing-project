@@ -1,7 +1,7 @@
 ---
 title: "Does a Pitcher Care About His Earned Run Average?"
 author: "Kevin Ferris"
-date: "Saturday, October 11, 2014"
+date: "`r Sys.Date()`"
 output:
   html_document:
     theme: journal
@@ -10,7 +10,7 @@ output:
 bibliography: bibliography.bib
 ---
 
-```{r setup, echo=FALSE, warning=FALSE, message=FALSE, eval = FALSE, cache=FALSE}
+```{r knitr-setup, echo=FALSE, warning=FALSE, message=FALSE, cache=FALSE}
 library(ggplot2)
 library(knitr)
 opts_chunk$set(echo = FALSE, 
@@ -27,6 +27,15 @@ options(show.signif.stars = F,
         digits = 3)
 ```
 
+```{r r-setup}
+library(Lahman)
+library(dplyr)
+library(Kwproj)
+library(ggplot2)
+library(rbokeh)
+theme_set(theme_bw())
+```
+
 <a href="https://github.com/kferris10/Stat-575-writing-project"><img style="position: absolute; top: 0; left: 0; border: 0;" src="https://camo.githubusercontent.com/121cd7cbdc3e4855075ea8b558508b91ac463ac2/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f6c6566745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_left_green_007200.png"></a>
 
 # Introduction
@@ -39,43 +48,65 @@ These statistics date back to the very beginning of baseball when (whatshisname)
 
 The potential problem with statistics that attempt to discern individual performance from a group result is that the statistics could incentives for the individuals to take actions that inflate their statistics at the potential expense of the group's performance.  For example, it may be beneficial for an outfielder to attempt a diving catch when the team would prefer him to play it safe and not risk missing the catch.  From the outfielder's point of view, his diving catch could be shown on ESPN's Web Gems segment or may otherwise catch the attention of people who would not remember him safely letting a ball drop.  The fundamental objective of this paper is to examine whether one of the commonly used statistics presents an incentive for pitchers that is not beneficial from the team's point of view.
 
-# Explanation
+## Explanation
 
 One of the statistics that people have been using for decades to evaluate pitchers is Earned Runs Average (ERA) (cite?).  A pitcher's job in baseball is to prevent the opposing team from scoring runs.  ERA is used to measure the number of runners that the pitcher is responsible for (a pitcher is responsible for a runner if that batter gets a hit or a walk off of the pitcher) and scales it to account for the number of innings pitched.  While ERA values have changed over time, an ERA of 3 has typically been the mark of a good pitcher, an ERA of 4 is average, and an ERA above 4.7 is poor.
 
-*Graph of ERA over time?*
+```{r era-over-time, fig.cap="Changes in pitcher ERA for the entire MLB over time."}
+Pitching %>% 
+  tbl_df() %>% 
+  filter(yearID > 1920) %>% 
+  group_by(yearID) %>% 
+  summarise(ER = sum(ER), 
+            IP = sum(IPouts) / 3) %>% 
+  mutate(ERA = ER / IP * 9) %>% 
+  rename(Year = yearID) %>% 
+  ggplot(., aes(Year, ERA)) + 
+  geom_line(alpha = I(.7)) + 
+  geom_point(colour = "blue", alpha = I(.9)) + 
+  labs(y = "League ERA")
+# p <- figure(width = 800, height = 500) %>%
+#   ly_lines(Year, ERA, data = d, alpha = 0.9) %>% 
+#   ly_points(Year, ERA, data = d) %>% 
+#   y_axis("League ERA")
+# p
+```
 
-The strange thing about this statistic is that only accounts for batters who scored *that a pitcher is responsible for* rather than all batters who the pitcher faces.  A pitcher is deemed "not responsible"" for a batter if, for example, a fielder makes an error and allows the runner to reach base.  Because it is not the pitcher's fault that the runner reached base (due to the fielding error), the theory behind ERA is that the pitcher should not be penalized if that runner scores.  
+The strange thing about this statistic is that only accounts for batters who scored *that a pitcher is responsible for* rather than all batters who the pitcher faces.  A pitcher is deemed "not responsible" for a batter if, for example, a fielder makes an error and allows the runner to reach base.  Because it is not the pitcher's fault that the runner reached base (due to the fielding error), the theory behind ERA is that the pitcher should not be penalized if that runner scores.  
 
 However, this creates a potential problem with the incentives present for the pitcher: because ERA is one of the primary tools used to evaluate pitchers, in the situations when ERA does not apply the incentives are not as strong.  *A fair amount of research has been done to evaluate the effects that incentives have in sports (come back and discuss more thoroughly).*
 
-We theorize that pitchers may pitch differently when ERA applies (when the pitcher is responsible for the runners) than when it does not.  Specifically, we believe that when a pitcher is not responsible for the men on base, he will be more likely to pitch in "dangerous locations" --- over the middle of the plate or far from the strike zone.  Conversely, when a pitcher is responsible for the men on base, he will be somewhat more likely to pitch around the edges of the strike zone. **May have to come back and think about these expectations a bit more**
+We theorize that pitchers may pitch differently when ERA applies (when the pitcher is responsible for the runners) than when it does not.  Specifically, we believe that when a pitcher is not responsible for the men on base, he will be more likely to pitch in "dangerous locations" --- over the middle of the plate or far from the strike zone.  Conversely, when a pitcher is responsible for the men on base, he will be somewhat more likely to pitch around the edges of the strike zone. *May have to come back and think about these expectations a bit more*
 
-Maybe a graph like the one [here](http://chessa015.github.io/575_Presentation/#12)?
+*Maybe a graph like the one [here](http://chessa015.github.io/575_Presentation/#12)?*  Now, the z-axis would just be pitch frequency.
+
+# Background
 
 The difficulty of assigning credit or blame to individuals when success is measured on the group level is not unique to baseball.  Firms measure their success by the company's profit line, but they must internally decide which employees helped or hindered the profit most of all.
 
 *Hopefully talk to Mark Anderson and find some examples of research on the effect of incentives at firms.*
 
+This paper will add to the literature by providing another example of how misaligned incentives can have unanticipated effects.  It shows that these exist even in the high stakes of a professional sporting event.  It also shows that they these influences can be seen even though every moment of a baseball game is heavily scrutinized by both professional and casual analysts.
+
 # Data
 
 ## Raw 
 
-Starting in the 2006 playoffs, Major League Baseball began using pitch tracking cameras to record information about each pitch thrown in a game.  By 2008, these cameras were implemented in every ball park in the majors.  These cameras track velocity, movement, release point, spin, and pitch location at the moment each pitch enters the strike zone.  MLB's Gameday API provides these data (known as PITCHF/x data) for free in an XML format [online](http://gd2.mlb.com/components/game/mlb/).  They also provide which runners (if any) are on base for each pitch.
+Starting in the 2006 playoffs, Major League Baseball began using pitch tracking cameras to record information about each pitch thrown in a game.  By 2008, these cameras were implemented in every ball park in the majors.  These cameras track velocity, movement, release point, spin, and pitch location at the moment each pitch enters the strike zone.  MLB's Gameday API provides these data (known as PITCHF/x data) for free in an XML format [online](http://gd2.mlb.com/components/game/mlb/).  They also provide additional data such as balls, strikes, outs, and runners on base.  For more information on the data provided by PITCHf/x, see [@fast2010heck].
 
-For example, on May 10, 2013 Jon Lester struck out Adam Lind with an 88 mph cut fastball to end the game.  The pitch was located low and inside, and can be viewed located [here](http://m.mlb.com/video/?content_id=27002963&topic_id=6479266).  Using the coordinates provided by the PITCHF/x data, we can visualize the location of the pitch as it entered the strike zone in the plot below.  The data also tell us that there were two balls, two strikes, two outs, and no men on base when the pitch occurred.
+For example, on May 10, 2013 Jon Lester struck out Adam Lind with an 88 mph cut fastball to end the game.  The pitch was located low and inside on the left-handed Lind.  The video can be found [here](http://m.mlb.com/video/?content_id=27002963&topic_id=6479266).  Using the coordinates provided by the PITCHF/x data, the location of the pitch when it enters the strike zone can be plotted.  While not shown here, the data also tell us that there were two balls, two strikes, to outs, and no men on base when this pitch occurred.
 
 *plot of pitch*
 
-```{r lester-pitch, fig.cap="Location of final pitch from Lester to Lind from the catcher's point of view.  The black box denotes a typical strikezone."}
+```{r lester-pitch, fig.cap="Location of final pitch from Lester to LindThe black box denotes a typical strike zone.  This plot is drawn from the catcher's point of view so Lind would be standing off to the right."}
 
 ```
 
-Using the R package `pitchRx` [@sievert2014package], the regular season PITCHF/x data from 2008 to 2014 were downloaded on (whatever date we finally get 2014 data).
+Using the `pitchRx` R package [@sievert2014package], the regular season PITCHF/x data from 2008 to 2013 were downloaded in February, 2014.
 
 ## Cleaned
 
-The question of interest for this project was whether baseball pitchers pitch differently when they are responsible for the runners on base.  We began by extracting all the pitches thrown when runners were on base.  Therefore, in our data, each observation is a single pitch that occurred when there was at least one runner on base.  For each observation, we recorded whether the pitcher was responsible for the men on base.  In situations where there were multiple men on base and the pitcher was responsible for some but not all of them, the pitcher was deemed responsible.
+The question of interest for this project is whether baseball pitchers pitch differently when they are responsible for the runners on base.  We began by extracting all the pitches thrown when runners were on base.  Therefore, in our data, each observation is a single pitch that occurred when there was at least one runner on base.  For each observation, we recorded whether the pitcher was responsible for the men on base.  In situations where there were multiple men on base and the pitcher was responsible for some but not all of them, the pitcher was deemed responsible.  
 
 *Does this make sense?*
 
@@ -91,23 +122,27 @@ This resulted in (blank) pitches where the pitcher was responsible and (blank) p
 
 *Table of data*
 
-Data were cleaned using the `dplyr` package in R [@wickham2014dplyr].
+In baseball, there are both left-handed and right-handed batters and left-handed and right-handed pitchers.  Pitch locations differ for each of these handedness combinations (*inser density plots*) so the data can be separated into four different pairs of handedness.  To simplify the analysis for this writing project, only pitches thrown by left-handed pitchers to left-handed batters were considered.  This handedness pair was chosen for two reasons.  It is the most infrequent combination.  It, therefore, presented the smallest and easiest data to analyze.  It was also the handedness pair that provide the most suggestive results during early exploration so most of the effort was put into understanding these data.
+
+Data were cleaned using the `dplyr` R package [@wickham2014dplyr].
 
 # Methodology
 
 ## How to Test the Idea
 
-*Will need to come back and discuss handedness*
+Figure (*below*) shows a 2d kernel density estimate of pitch location in 2014 [@venables2002modern].  This estimate is made by constructing a two dimensional $n \times n$ grid of the strike zone where $n$ represents the number of grid points.  At each grid, the pitch density (i.e. the relative likelihood that a pitch is thrown in this location) is calculated for each of these grid points.  
 
-Figure (below) shows a 2d kernel density estimate of pitch location in 2014 [@venables2002modern].  It appears that most pitches are thrown *in the zone and down* (or whatever the plot shows - should be over the plate, down, away).  To test our hypothesis, we would like to see if pitch location is different when pitchers are responsible versus when they are not.  So we began by fitting (is this the correct word?) density estimates for each situation.  The results are displayed below, along with the difference in the two densities.
+*should I explain how densities are calculated?*
 
-Plot & Discussion
+It appears that most pitches are thrown *in the zone and down* (or whatever the plot shows - should be over the plate, down, away).  To test the hypothesis, we need to see if pitch location is different when pitchers are responsible versus when they are not.  An estimated density surface for both of these situations is plotted in Figure (*below*).  The results are displayed below, along with the difference in the two densities.
+
+*Plot & Discussion*
 
 ## Permutation Testing
 
 For this analysis, the null hypothesis is that the density surfaces in the two situations are the same, and the alternative is that they are different. According to that null hypothesis, pitch location is not related to whether or not pitchers are responsible for the men on base.  Therefore, under the null hypothesis, the labels are arbitrary and have no meaning.  
 
-In this setting, permutation testing can be used to help test these hpotheses.  Because the labels are arbitrarily assigned under the null, they can be permuted (randomly reassigned) to form a permuted dataset which is just as likely have occurred under the null hypothesis.  By repeating this process many times, a distribution of permuted densities can be constructed.  This distribution represents the likely values of the density surface at each point under the null hypothesis.  The observed density can be compared to this distribution of permuted densities at each grid point.  In these comparisons, the proportion of times a permuted density is more extreme than the observed density becomes the p-value.  This creates a grid of $n \times n$ p-values.
+In this setting, permutation testing can be used to help test these hypotheses.  Because the labels are arbitrarily assigned under the null, they can be permuted (i.e. randomly reassigned) to form a permuted dataset which is just as likely have occurred under the null hypothesis.  By repeating this process many times, a distribution of permuted differences in densities can be constructed.  This distribution represents the likely values of the density surface at each grid point under the null hypothesis.  The observed difference in densities can be compared to this distribution of permuted differences in densities at each grid point.  In these comparisons, the proportion of times a permuted difference is more extreme than the observed difference becomes the p-value.  This creates a grid of $n \times n$ p-values.
 
 ## Adjusting for Multiple Testing
 
