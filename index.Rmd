@@ -42,8 +42,6 @@ load("data/2014-pitchfx-data/resp-pitchers.RData")
 load("data/2014-pitchfx-data/lvl-resp.RData")
 ```
 
-<a href="https://github.com/kferris10/Stat-575-writing-project"><img style="position: absolute; top: 0; left: 0; border: 0;" src="https://camo.githubusercontent.com/121cd7cbdc3e4855075ea8b558508b91ac463ac2/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f6c6566745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_left_green_007200.png"></a>
-
 # Introduction
 
 Baseball fans, players, and analysts go to the park hoping to see their team win [@keri2007baseball].  But they do not abandon their allegiances to their team the moment they leave the ballpark.  They continue to discuss the game, team, and players in offices, bars, households, and blogs across the country.
@@ -239,8 +237,7 @@ p_diff <- obs_diff %>%
   gather(pz, diff, -px) %>% 
   mutate(pz = pz %>% 
            str_replace_all("X", "") %>% 
-           as.numeric(), 
-         diff = abs(diff)) %>% 
+           as.numeric()) %>% 
   ggplot(data = ., aes(x = px, y = pz)) + 
   geom_point(aes(colour = diff)) + 
 #   geom_segment(aes(x=-0.8, y=1.5, xend = -0.8, yend = 3.5)) + 
@@ -268,9 +265,38 @@ In this setting, permutation testing can be used to help test these hypotheses. 
 
 Analyzing $n \times n$ p-values creates a multiple testing scenario.  Testing each p-value at a given significance level ($\alpha$), sets the probability of rejecting the null hypothesis when it is true to be $(100 * \alpha)\%$.  This controls the Type I Error Probability for any single test.  So for each of the $n \times n$ p-values the Type I Error rate is controlled for that test.  For all of the tests, however, the *family-wise error rate* (the probability of a Type I error for any of the $n \times n$ tests) is not controlled.  A multiple correction procedure was implemented to hold the family-wise error rate constant.
 
-*More discussion! about the actual procedure we'll use(?)*
+**More discussion! about the actual procedure we'll use(?)**
 
-# Results?
+# Results
+
+After running 1000 permutation on a grid of $100 \times 100$ points, a grid of $100 \times 100$ p-values was obtained.  This grid is visualized below.  Blues and purples suggest darker p-values while yellows and reds  suggest smaller p-values.  Larger rows are on the inner half of the plate, and larger columns are higher in the strikezone.
+
+```{r perm_pvals, eval=FALSE}
+set.seed(10)
+pvals <- perm_pvals(1000, 100, lvl_resp)
+```
+```{r raw_pvals}
+load("data/2014-pitchfx-data/pvalues.RData")
+library(lattice)
+wireframe(pvals, shade = T, scales = list(arrows = F))
+```
+
+Most of the lower, inner half of the plate contains high p-values.  There are a scattered few small p-values, but these are probably spurious.  Moving up and away in the strikezone, there is an extremely interesting pattern present.  There is a diagonal streak of small p-values which suggests that there might be a difference in the densities along this streak.  Interestingly, there is a very steep drop off from the high p-values to the low p-values in this trough.  I can't imagine why this might be occurring.
+
+Continuing to move up and away in the strikezone, the p-values once again rise rapidly.  Up and away in the strikezone the p-values are mostly very large once again.  In the very upper left, there are some small p-values which might bear further investigation but for the most part this area is not very interesting.
+
+## Bonferonni Correction
+
+As noted previously, with this many p-values some sort of correction must be used.  To begin, a Bonferroni correction was implemented.  This correction involves inflatingthe p-values by $2k$ where $k$ is the number of tests that were run.  Since a $100 \times 100$ grid was used, there were 10000 tests performed.  So all of the p-values must be inflated by 20000.  This results in the following adjusted grid of p-values.
+
+**This is completely wrong**
+
+```{r bonf_pvals}
+pvals_bon <- pvals * 2 * 10000
+wireframe(pvals_bon, shade = T, scales = list(arrows = F))
+```
+
+Bonferroni is a punitive correction so all the p-values are inflated by a ton.  In this example, since only 1000 permutations were run, all the p-values are now extremely large.
 
 # References
 
