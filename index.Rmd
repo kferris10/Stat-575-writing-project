@@ -6,34 +6,40 @@ output:
   html_document:
     theme: journal
     number_sections: true
+    fig_caption: true
   pdf_document: default
 bibliography: bibliography.bib
 ---
 
 ```{r knitr-setup, echo=FALSE, warning=FALSE, message=FALSE, cache=FALSE}
-library(ggplot2)
-library(knitr)
-opts_chunk$set(echo = FALSE, 
-               message = FALSE, 
-               warning = FALSE, 
-               results = "asis", 
-               tidy = FALSE, 
-               fig.height = 5, 
-               fig.width = 8, 
-               fig.align = "center", 
-               size = "small", 
-               digits = 3)
+knitr::opts_chunk$set(echo = FALSE, 
+                      message = FALSE, 
+                      warning = FALSE, 
+                      results = "asis", 
+                      tidy = FALSE, 
+                      fig.height = 5, 
+                      fig.width = 8, 
+                      fig.align = "center", 
+                      size = "small", 
+                      digits = 3)
 options(show.signif.stars = F, 
         digits = 3)
 ```
 
 ```{r r-setup}
+# packages
+library(knitr)
 library(Lahman)
+library(tidyr)
 library(dplyr)
+library(stringr)
 library(Kwproj)
 library(ggplot2)
-library(rbokeh)
+library(gridExtra)
 theme_set(theme_bw())
+# loading data
+load("data/2014-pitchfx-data/resp-pitchers.RData")
+load("data/2014-pitchfx-data/lvl-resp.RData")
 ```
 
 <a href="https://github.com/kferris10/Stat-575-writing-project"><img style="position: absolute; top: 0; left: 0; border: 0;" src="https://camo.githubusercontent.com/121cd7cbdc3e4855075ea8b558508b91ac463ac2/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f6c6566745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_left_green_007200.png"></a>
@@ -96,13 +102,22 @@ Starting in the 2006 playoffs, Major League Baseball began using pitch tracking 
 
 For example, on May 10, 2013 Jon Lester struck out Adam Lind with an 88 mph cut fastball to end the game.  The pitch was located low and inside on the left-handed Lind.  The video can be found [here](http://m.mlb.com/video/?content_id=27002963&topic_id=6479266).  Using the coordinates provided by the PITCHF/x data, the location of the pitch when it enters the strike zone can be plotted.  While not shown here, the data also tell us that there were two balls, two strikes, to outs, and no men on base when this pitch occurred.
 
-*plot of pitch*
-
-```{r lester-pitch, fig.cap="Location of final pitch from Lester to LindThe black box denotes a typical strike zone.  This plot is drawn from the catcher's point of view so Lind would be standing off to the right."}
-
+```{r lester-pitch, fig.cap="Location of final pitch from Lester to Lind.  The black box denotes a typical strike zone.  This plot is drawn from the catcher's point of view so Lind would be standing off to the right."}
+p <- data.frame( px = 0.634, pz = 2.305, sh = factor(1))
+ggplot(p) + 
+  geom_segment(aes(x=-0.75, y=1.75, xend = -0.75, yend = 3.35)) + 
+  geom_segment(aes(x=-0.75, y=3.35, xend = 0.75, yend = 3.35)) + 
+  geom_segment(aes(x=0.75, y=3.35, xend = 0.75, yend = 1.75)) + 
+  geom_segment(aes(x=0.75, y=1.75, xend = -0.75, yend = 1.75)) +
+  geom_point(aes(x=px, y=pz, shape = sh), size = I(4)) + 
+  scale_shape(solid = F, guide = FALSE) + 
+  xlim(-1.5, 1.5) + ylim(1, 4) + 
+  labs(x = "Horizontal Location", 
+       y = "Vertical Location", 
+       title = "Pitch Location for Lester's Strikeout")
 ```
 
-Using the `pitchRx` R package [@sievert2014package], the regular season PITCHF/x data from 2008 to 2013 were downloaded in February, 2014.
+Using the `pitchRx` R package [@sievert2014package], the regular season PITCHF/x data from 2014 were downloaded in April, 2015.
 
 ## Cleaned
 
@@ -118,25 +133,130 @@ A pitcher was deemed responsible if, according to the MLB Official Rules, the pi
 4) the inning is prolonged because of a fielding error
 5) a relief pitcher inherits runners on base
 
-This resulted in (blank) pitches where the pitcher was responsible and (blank) pitches where the pitcher was not responsible.  A small portion of the data set is presented below.  
+This resulted in `r resp_dat %>% filter(resp_pit == "resp") %>% nrow()` pitches where the pitcher was responsible and `r resp_dat %>% filter(resp_pit == "not") %>% nrow()` pitches where the pitcher was not responsible.  A small portion of the data set is presented below.  
 
-*Table of data*
+```{r data_sample}
+resp_dat %>% 
+  head() %>% 
+  kable(format = "html", 
+        caption = "Six pitches from the 2014 season.  The gameday_link, num, and id columns are identifiers for the game, at bat number, and pitch number.  The p_throws and stand columns tell the handedness of the pitcher and batter respectively.  resp_pit tells whether or not the pitcher is responsible for the men on base or not.  px and pz tell the horizontal and vertical location of the pitch respectively.")
+```
 
-In baseball, there are both left-handed and right-handed batters and left-handed and right-handed pitchers.  Pitch locations differ for each of these handedness combinations (*inser density plots*) so the data can be separated into four different pairs of handedness.  To simplify the analysis for this writing project, only pitches thrown by left-handed pitchers to left-handed batters were considered.  This handedness pair was chosen for two reasons.  It is the most infrequent combination.  It, therefore, presented the smallest and easiest data to analyze.  It was also the handedness pair that provide the most suggestive results during early exploration so most of the effort was put into understanding these data.
+In baseball, there are both left-handed and right-handed batters and left-handed and right-handed pitchers.  Pitch locations differ for each of these handedness combinations (see plot below) so the data can be separated into four different pairs of handedness.  
 
-Data were cleaned using the `dplyr` R package [@wickham2014dplyr].
+```{r handedness_density, fig.height=8, fig.width=8}
+p1 <- ggplot(resp_dat, aes(x = px, y = pz)) + 
+  stat_density2d(geom = "tile", contour = FALSE, 
+               aes(fill = ..density.., alpha = ..density..)) + 
+  geom_segment(aes(x=-0.8, y=1.5, xend = -0.8, yend = 3.5)) + 
+  geom_segment(aes(x=-0.8, y=3.5, xend = 0.8, yend = 3.5)) + 
+  geom_segment(aes(x=0.8, y=3.5, xend = 0.8, yend = 1.5)) + 
+  geom_segment(aes(x=0.8, y=1.5, xend = -0.8, yend = 1.5)) + 
+  guides(fill = FALSE, alpha = FALSE) + theme_bw() + 
+  scale_fill_gradient(low = "#FF99FF", high = "#FF0000") + 
+  facet_grid(p_throws ~ stand) + 
+  xlim(-1.5, 1.5) + ylim(1, 4) + 
+  labs(x = "Horizontal Location", 
+       y = "Vertical Location", 
+       title = "Pitch Location for Each Combination of Batters and Pitchers")
+p1
+```
+
+To simplify the analysis for this writing project, only pitches thrown by left-handed pitchers to left-handed batters were considered.  This handedness pair was chosen for two reasons.  It is the most infrequent combination.  It, therefore, presented the smallest and easiest data to analyze.  It was also the handedness pair that provide the most suggestive results during early exploration so most of the effort was put into understanding these data.  Data were cleaned using the `dplyr` R package [@wickham2014dplyr].
 
 # Methodology
 
 ## How to Test the Idea
 
-Figure (*below*) shows a 2d kernel density estimate of pitch location in 2014 [@venables2002modern].  This estimate is made by constructing a two dimensional $n \times n$ grid of the strike zone where $n$ represents the number of grid points.  At each grid, the pitch density (i.e. the relative likelihood that a pitch is thrown in this location) is calculated for each of these grid points.  
+The plot below shows a 2d kernel density estimate of pitch location in 2014 for left handed pitchers vs left handed batters [@venables2002modern].  This estimate is made by constructing a two dimensional $n \times n$ grid of the strike zone where $n$ represents the number of grid points.  At each grid point, the pitch density (i.e. the relative likelihood that a pitch is thrown in this location) is calculated for each of these grid points.  
 
 *should I explain how densities are calculated?*
 
-It appears that most pitches are thrown *in the zone and down* (or whatever the plot shows - should be over the plate, down, away).  To test the hypothesis, we need to see if pitch location is different when pitchers are responsible versus when they are not.  An estimated density surface for both of these situations is plotted in Figure (*below*).  The results are displayed below, along with the difference in the two densities.
+```{r lvl_density}
+p2 <- ggplot(lvl_resp, aes(x = px, y = pz)) + 
+  stat_density2d(geom = "tile", contour = FALSE, 
+               aes(fill = ..density.., alpha = ..density..)) + 
+  geom_segment(aes(x=-0.8, y=1.5, xend = -0.8, yend = 3.5)) + 
+  geom_segment(aes(x=-0.8, y=3.5, xend = 0.8, yend = 3.5)) + 
+  geom_segment(aes(x=0.8, y=3.5, xend = 0.8, yend = 1.5)) + 
+  geom_segment(aes(x=0.8, y=1.5, xend = -0.8, yend = 1.5)) + 
+  guides(fill = FALSE, alpha = FALSE) + theme_bw() + 
+  scale_fill_gradient(low = "#FF99FF", high = "#FF0000") + 
+  xlim(-1.5, 1.5) + ylim(1, 4) + 
+  labs(x = "Horizontal Location", 
+       y = "Vertical Location", 
+       title = "Pitch Location for LHP vs LHB")
+p2
+```
 
-*Plot & Discussion*
+
+This plot is from the catcher's perspective so the batter stands on the right side of the plot.  It appears that most pitches are thrown in the strikezone, down, and away from the batter.  
+
+To test the hypothesis that there is no difference in pitch location when pitchers are responsible vs when they are not, we need to see if pitch location is different when pitchers are responsible versus when they are not.  An estimated density surface for both of these situations are plotted below along with the difference in the two densities.
+
+```{r density_comp, fig.height=8, fig.width=8}
+# observed difference in densities
+obs_diff <- lvl_resp %>% 
+  filter(px > -1.5, px < 1.5, pz > 1, pz < 4) %>% 
+  dens_diff(100, data = .)
+
+# density plot for responsible pitchers
+p_resp <- lvl_resp %>% 
+  filter(resp_pit == "resp") %>% 
+  ggplot(data = ., aes(x = px, y = pz)) + 
+  stat_density2d(geom = "tile", contour = FALSE, 
+               aes(fill = ..density.., alpha = ..density..)) + 
+  geom_segment(aes(x=-0.8, y=1.5, xend = -0.8, yend = 3.5)) + 
+  geom_segment(aes(x=-0.8, y=3.5, xend = 0.8, yend = 3.5)) + 
+  geom_segment(aes(x=0.8, y=3.5, xend = 0.8, yend = 1.5)) + 
+  geom_segment(aes(x=0.8, y=1.5, xend = -0.8, yend = 1.5)) + 
+  guides(fill = FALSE, alpha = FALSE) + theme_bw() + 
+  scale_fill_gradient(low = "#FF99FF", high = "#FF0000") + 
+  xlim(-1.5, 1.5) + ylim(1, 4) + 
+  labs(x = "Horizontal Location", 
+       y = "Vertical Location", 
+       title = "Pitch Location when Pitchers are Responsible")
+# density plot when pitchers aren't responsible
+p_not <- lvl_resp %>% 
+  filter(resp_pit == "not") %>% 
+  ggplot(data = ., aes(x = px, y = pz)) + 
+  stat_density2d(geom = "tile", contour = FALSE, 
+               aes(fill = ..density.., alpha = ..density..)) + 
+  geom_segment(aes(x=-0.8, y=1.5, xend = -0.8, yend = 3.5)) + 
+  geom_segment(aes(x=-0.8, y=3.5, xend = 0.8, yend = 3.5)) + 
+  geom_segment(aes(x=0.8, y=3.5, xend = 0.8, yend = 1.5)) + 
+  geom_segment(aes(x=0.8, y=1.5, xend = -0.8, yend = 1.5)) + 
+  guides(fill = FALSE, alpha = FALSE) + theme_bw() + 
+  scale_fill_gradient(low = "#FF99FF", high = "#FF0000") + 
+  xlim(-1.5, 1.5) + ylim(1, 4) + 
+  labs(x = "Horizontal Location", 
+       y = "Vertical Location", 
+       title = "Pitch Location when Pitchers are not Responsible")
+# observed difference in densities
+p_diff <- obs_diff %>% 
+  data.frame() %>% tbl_df() %>% 
+  mutate(px = 1:nrow(.)) %>% 
+  gather(pz, diff, -px) %>% 
+  mutate(pz = pz %>% 
+           str_replace_all("X", "") %>% 
+           as.numeric(), 
+         diff = abs(diff)) %>% 
+  ggplot(data = ., aes(x = px, y = pz)) + 
+  geom_point(aes(colour = diff)) + 
+#   geom_segment(aes(x=-0.8, y=1.5, xend = -0.8, yend = 3.5)) + 
+#   geom_segment(aes(x=-0.8, y=3.5, xend = 0.8, yend = 3.5)) + 
+#   geom_segment(aes(x=0.8, y=3.5, xend = 0.8, yend = 1.5)) + 
+#   geom_segment(aes(x=0.8, y=1.5, xend = -0.8, yend = 1.5)) + 
+  guides(fill = FALSE, alpha = FALSE) + theme_bw() + 
+  scale_colour_gradient(low = "#FF99FF", high = "#FF0000") + 
+#   xlim(-1.5, 1.5) + ylim(1, 4) + 
+  labs(x = "Horizontal Location", 
+       y = "Vertical Location", 
+       title = "Difference in Pitch Densities")
+grid.arrange(p_resp, p_not, p_diff, ncol = 2)
+```
+
+In both settings, pitchers do tend to stay low and away from batters.  However, it does appear that pitches are more concentrated when pitchers are not responsible.  When pitchers are responsible, they spread out the location of their pitches a bit more.  On the far right, the magnitude of the difference between the two density estimates is plotted.  It appears that there are some differences in the estimates.  
 
 ## Permutation Testing
 
@@ -148,7 +268,7 @@ In this setting, permutation testing can be used to help test these hypotheses. 
 
 Analyzing $n \times n$ p-values creates a multiple testing scenario.  Testing each p-value at a given significance level ($\alpha$), sets the probability of rejecting the null hypothesis when it is true to be $(100 * \alpha)\%$.  This controls the Type I Error Probability for any single test.  So for each of the $n \times n$ p-values the Type I Error rate is controlled for that test.  For all of the tests, however, the *family-wise error rate* (the probability of a Type I error for any of the $n \times n$ tests) is not controlled.  A multiple correction procedure was implemented to hold the family-wise error rate constant.
 
-*More discussion! about the actual procedure we'll use*
+*More discussion! about the actual procedure we'll use(?)*
 
 # Results?
 
