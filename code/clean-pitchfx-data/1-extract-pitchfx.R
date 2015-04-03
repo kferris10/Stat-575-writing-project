@@ -24,7 +24,7 @@ pit_locs <- tbl(db, "pitch") %>%
 ab_info <- tbl(db, "atbat") %>% 
   filter(gameday_link %in% game$gameday_link) %>% 
   select(gameday_link, num, inning, inning_side, pitcher, batter, event, 
-         home_team_runs, away_team_runs)
+         home_team_runs, away_team_runs, p_throws, stand)
 
 # combining and saving ------------------------------
 
@@ -32,7 +32,7 @@ ab_info <- tbl(db, "atbat") %>%
 pit_dat <- inner_join(ab_info, pit_locs, by = c("gameday_link", "num")) %>% 
   arrange(gameday_link, num, id) %>% 
   select(gameday_link, num, id, inning, inning_side, pitcher, batter, home_team_runs, 
-         event, px, pz, on_1b, on_2b, on_3b) %>% 
+         event, px, pz, on_1b, on_2b, on_3b, p_throws, stand) %>% 
   collect()
 
 # saving
