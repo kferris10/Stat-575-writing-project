@@ -1,3 +1,9 @@
 .Rproj.user
 .Rhistory
 .RData
+initial-R_Code_Data/
+Background/
+Presentation/
+reports/
+vignettes/
+data/pitchfx14.sqlite3
