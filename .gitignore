@@ -7,3 +7,5 @@ Presentation/
 reports/
 vignettes/
 data/pitchfx14.sqlite3
+index_cache/
+index_files/
