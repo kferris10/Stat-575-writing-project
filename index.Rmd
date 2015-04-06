@@ -17,9 +17,8 @@ knitr::opts_chunk$set(echo = FALSE,
                       warning = FALSE, 
                       results = "asis", 
                       tidy = FALSE, 
-                      cache = T, 
-                      fig.height = 5, 
-                      fig.width = 8, 
+                      fig.height = 4, 
+                      fig.width = 6, 
                       fig.align = "center", 
                       size = "small", 
                       digits = 3)
@@ -275,7 +274,9 @@ After running 1000 permutation on a grid of $100 \times 100$ points, a grid of $
 
 ```{r perm_pvals, eval=FALSE}
 set.seed(10)
-pvals <- perm_pvals(1000, 100, lvl_resp)
+pvals <- perm_pvals(10000, 75, lvl_resp)
+# saving to increase compile time
+# save(pvals, file = "data/2014-pitchfx-data/pvalues.RData")
 ```
 ```{r raw_pvals}
 load("data/2014-pitchfx-data/pvalues.RData")
@@ -291,8 +292,6 @@ Continuing to move up and away in the strikezone, the p-values once again rise r
 
 As noted previously, with this many p-values some sort of correction must be used.  To begin, a Bonferroni correction was implemented.  This correction involves inflating the p-values by $2k$ where $k$ is the number of tests that were run.  Since a $100 \times 100$ grid was used, there were 10000 tests performed.  So all of the p-values must be inflated by 20000.  This results in the following adjusted grid of p-values.
 
-**This is completely wrong**
-
 ```{r bonf_pvals}
 # adjusting pvalues for multiple comparisons
 pvals_bon <- pvals %>% 
@@ -303,14 +302,14 @@ pvals_bon <- pvals %>%
   mutate(pval_adj = p.adjust(pval, method = "bonferroni"))
 # wireframe plot
 pvals_bon %>% 
-  select(row, col, pval_adj) %>%
+  select(row, col, pval_adj) %>% 
   spread(col, pval_adj) %>% 
   select(-row) %>% 
   as.matrix() %>% 
   wireframe(shade = T, scales = list(arrows = F))
 ```
 
-Bonferroni is a punitive correction so all the p-values are inflated up to 1.  
+Bonferroni is a very conservative correction method so we will be unable to detect any differences using it.  In fact, there were not enough tests run to detect a single difference using these data because all the p-values were inflated up to one.  More subtle methods of correction will have to be used to determine if there are meaningful differences in these data.
 
 # References
 
