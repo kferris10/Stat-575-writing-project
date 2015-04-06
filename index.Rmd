@@ -301,12 +301,14 @@ pvals_bon <- pvals %>%
   gather(col, pval, -row) %>% 
   mutate(pval_adj = p.adjust(pval, method = "bonferroni"))
 # wireframe plot
-pvals_bon %>% 
+bon_long <- pvals_bon %>% 
   select(row, col, pval_adj) %>% 
+  mutate(col = str_replace_all(col, "X", "") %>% as.numeric()) %>% 
   spread(col, pval_adj) %>% 
   select(-row) %>% 
-  as.matrix() %>% 
-  wireframe(shade = T, scales = list(arrows = F))
+  as.matrix()
+colnames(bon_long) <- NULL
+bon_long %>% wireframe(shade = T, scales = list(arrows = F))
 ```
 
 Bonferroni is a very conservative correction method so we will be unable to detect any differences using it.  In fact, there were not enough tests run to detect a single difference using these data because all the p-values were inflated up to one.  More subtle methods of correction will have to be used to determine if there are meaningful differences in these data.
