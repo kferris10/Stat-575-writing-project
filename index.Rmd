@@ -1,13 +1,16 @@
 ---
 title: "Does a Pitcher Care About His Earned Run Average?"
 author: "Kevin Ferris"
-date: "`r Sys.Date()`"
+date: '`r Sys.Date()`'
+header-includes:
+  - \usepackage{graphicx}
 output:
+  pdf_document: 
+    keep_tex: true
   html_document:
+    fig_caption: yes
+    number_sections: yes
     theme: journal
-    number_sections: true
-    fig_caption: true
-  pdf_document: default
 bibliography: bibliography.bib
 ---
 
@@ -20,8 +23,7 @@ knitr::opts_chunk$set(echo = FALSE,
                       fig.height = 4, 
                       fig.width = 6, 
                       fig.align = "center", 
-                      size = "small", 
-                      digits = 3)
+                      size = "small")
 options(show.signif.stars = F, 
         digits = 3)
 set.seed(42)
@@ -134,11 +136,9 @@ A pitcher was deemed responsible if, according to the MLB Official Rules, the pi
 
 This resulted in `r resp_dat %>% filter(resp_pit == "resp") %>% nrow()` pitches where the pitcher was responsible and `r resp_dat %>% filter(resp_pit == "not") %>% nrow()` pitches where the pitcher was not responsible.  A small portion of the data set is presented below.  
 
-```{r data_sample}
+```{r data_sample, results='markup'}
 resp_dat %>% 
-  head() %>% 
-  kable(format = "html", 
-        caption = "Six pitches from the 2014 season.  The gameday_link, num, and id columns are identifiers for the game, at bat number, and pitch number.  The p_throws and stand columns tell the handedness of the pitcher and batter respectively.  resp_pit tells whether or not the pitcher is responsible for the men on base or not.  px and pz tell the horizontal and vertical location of the pitch respectively.")
+  head() 
 ```
 
 In baseball, there are both left-handed and right-handed batters and left-handed and right-handed pitchers.  Pitch locations differ for each of these handedness combinations (see plot below) so the data can be separated into four different pairs of handedness.  

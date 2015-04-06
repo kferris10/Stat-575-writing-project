@@ -9,3 +9,8 @@ vignettes/
 data/pitchfx14.sqlite3
 index_cache/
 index_files/
+index.aux
+index.log
+index.out
+index.synctex.gz
+index.tex
