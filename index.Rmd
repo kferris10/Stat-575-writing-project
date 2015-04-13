@@ -4,9 +4,13 @@ author: "Kevin Ferris"
 date: '`r Sys.Date()`'
 header-includes:
   - \usepackage{graphicx}
+  - \usepackage{float}
+  - \usepackage{setspace} 
+  - \doublespacing
 output:
   pdf_document: 
     keep_tex: true
+    number_sections: yes
   html_document:
     fig_caption: yes
     number_sections: yes
@@ -16,13 +20,17 @@ bibliography: bibliography.bib
 
 ```{r knitr-setup, echo=FALSE, warning=FALSE, message=FALSE, cache=FALSE}
 knitr::opts_chunk$set(echo = FALSE, 
+                      cache = FALSE, 
                       message = FALSE, 
                       warning = FALSE, 
                       results = "asis", 
+                      comment = "", 
                       tidy = FALSE, 
                       fig.height = 4, 
                       fig.width = 6, 
                       fig.align = "center", 
+                      fig.pos = "!h", 
+                      out.width = ".8\\linewidth", 
                       size = "small")
 options(show.signif.stars = F, 
         digits = 3)
@@ -37,27 +45,34 @@ library(tidyr)
 library(dplyr)
 library(stringr)
 library(Kwproj)
+library(lattice)
 library(ggplot2)
 library(gridExtra)
 theme_set(theme_bw())
 # loading data
 load("data/2014-pitchfx-data/resp-pitchers.RData")
 load("data/2014-pitchfx-data/lvl-resp.RData")
+# functions to rescale matrices
+my_rescale <- function(vec, end_lower, end_upper) {
+  vec / 
+    (max(vec) - min(vec)) * (end_upper - end_lower) + 
+    end_lower
+}
 ```
 
 # Introduction
 
 Baseball fans, players, and analysts go to the park hoping to see their team win [@keri2007baseball].  But they do not abandon their allegiances to their team the moment they leave the ballpark.  They continue to discuss the game, team, and players in offices, bars, households, and blogs across the country.
 
-These discussions vary from favorite players to in-game tactical decisions with heated arguments developing on even decisions in single at bats (cite some of the bunt discussions from Ned Yost in Game 7?).  Another popular discussion topic is attempting to determine how much each individual player contributed to the team's success or failure.  But assigning the credit or blame is difficult because all the players on the team were working together to achieve the win.  So fans and analysts, create statistics which summarize the individual contributions from each player.
+These discussions vary from favorite players to in-game tactical decisions with heated arguments developing on even decisions in single at bats.  Another popular discussion topic is attempting to determine how much each individual player contributed to the team's success or failure.  But assigning the credit or blame is difficult because all the players on the team were working together to achieve the win.  So fans and analysts, create statistics which summarize the individual contributions from each player.
 
-These statistics date back to the very beginning of baseball when (whatshisname) produced the first box score recording the number of hits, walks and runs batted in for each position player [@whereverIlearnedthis].  For pitchers, he recorded the (innings pitched, ERA, etc?).  Statistics have been continually introduced into baseball as fans and analysts try to find more  precise ways of acknowledging a player's contribution.  (State when errors, sacrifices, double plays, holds, etc were first recorded).  In the 1970's, an analyst named Bill James started closely examining these statistics to see which were most important.  This resulted in the rise of "sabermetrics" --- using quantitative analysis to provide better statistics rather than just trying to record everything that happened in the game.  This movement was championed by the early 2000s Oakland Athletics who became the most well known example of a team successfully incorporating analytics into their decision making [@Moneyball].  Because of this sabermetric revolution, it is fair to say that baseball fans, analysts, and players have never had access to the number or quality of statistics as we have access to today.  
+These statistics date back to the very beginning of baseball when Henry Chadwick produced the first box score recording the statistics of batters and pitchers for individual games [@schiff2008father].    Since then, statistics have been continually introduced into baseball as fans and analysts try to find more  precise ways of acknowledging a player's contribution.  In the 1970's, an analyst named Bill James started closely examining these statistics to see which were most important.  This resulted in the rise of "sabermetrics" --- using quantitative analysis to improve baseball statistics and decision making.  This movement was championed by the early 2000s Oakland Athletics who became the most well known example of a team successfully incorporating analytics into their decision making [@lewis2004moneyball].  Because of this sabermetric revolution, it is fair to say that baseball fans, analysts, and players have never had access to the number or quality of statistics as we have access to today.  
 
-The potential problem with statistics that attempt to discern individual performance from a group result is that the statistics could incentives for the individuals to take actions that inflate their statistics at the potential expense of the group's performance.  For example, it may be beneficial for an outfielder to attempt a diving catch when the team would prefer him to play it safe and not risk missing the catch.  From the outfielder's point of view, his diving catch could be shown on ESPN's Web Gems segment or may otherwise catch the attention of people who would not remember him safely letting a ball drop.  The fundamental objective of this paper is to examine whether one of the commonly used statistics presents an incentive for pitchers that is not beneficial from the team's point of view.
+The potential problem with all these different statistics is that they attempt to discern individual performance from a group result.  If the incentives are not properly aligned, then these statistics could be encouraging players to take actions that are not beneficial to the team.  For example, it may be beneficial for an outfielder to attempt a risky diving catch, while the team might prefer that play it safe and not take such risky behavior.  From the outfielder's point of view, his diving catch could be shown on ESPN's Web Gems segment or may otherwise catch the attention of people who would not remember him safely letting a ball drop.  The fundamental objective of this paper is to examine whether one of the commonly used statistics presents an incentive for baseball pitchers that is not beneficial from the team's point of view.
 
 ## Explanation
 
-One of the statistics that people have been using for decades to evaluate pitchers is Earned Runs Average (ERA) (cite?).  A pitcher's job in baseball is to prevent the opposing team from scoring runs.  ERA is used to measure the number of runners that the pitcher is responsible for (a pitcher is responsible for a runner if that batter gets a hit or a walk off of the pitcher) and scales it to account for the number of innings pitched.  While ERA values have changed over time, an ERA of 3 has typically been the mark of a good pitcher, an ERA of 4 is average, and an ERA above 4.7 is poor.
+A pitcher's job in baseball is to prevent the opposing team from scoring runs.  One of the statistics that people have been using for decades to evaluate pitchers is Earned Runs Average (ERA), which dates all the way back to Henry Chadwick in the 1800's.  ERA is used to measure the number of runners who score that the pitcher is responsible for (a pitcher is responsible for a runner if that batter gets a hit or a walk off of the pitcher) and scales it to account for the number of innings pitched.  While ERA values have changed over time, an ERA of 3 has typically been the mark of a good pitcher, an ERA of 4 is average, and an ERA above 4.7 is poor (see the plot below).
 
 ```{r era-over-time, fig.cap="Changes in pitcher ERA for the entire MLB over time."}
 Pitching %>% 
@@ -81,19 +96,11 @@ Pitching %>%
 
 The strange thing about this statistic is that only accounts for batters who scored *that a pitcher is responsible for* rather than all batters who the pitcher faces.  A pitcher is deemed "not responsible" for a batter if, for example, a fielder makes an error and allows the runner to reach base.  Because it is not the pitcher's fault that the runner reached base (due to the fielding error), the theory behind ERA is that the pitcher should not be penalized if that runner scores.  
 
-However, this creates a potential problem with the incentives present for the pitcher: because ERA is one of the primary tools used to evaluate pitchers, in the situations when ERA does not apply the incentives are not as strong.  *A fair amount of research has been done to evaluate the effects that incentives have in sports (come back and discuss more thoroughly).*
+However, this creates a potential problem with the incentives present for the pitcher: because ERA is one of the primary tools used to evaluate pitchers, in the situations when ERA does not apply the incentives are not as strong.  
 
-We theorize that pitchers may pitch differently when ERA applies (when the pitcher is responsible for the runners) than when it does not.  Specifically, we believe that when a pitcher is not responsible for the men on base, he will be more likely to pitch in "dangerous locations" --- over the middle of the plate or far from the strike zone.  Conversely, when a pitcher is responsible for the men on base, he will be somewhat more likely to pitch around the edges of the strike zone. *May have to come back and think about these expectations a bit more*
+*A fair amount of research has been done to evaluate the effects that incentives have in sports (come back and discuss more thoroughly).*
 
-*Maybe a graph like the one [here](http://chessa015.github.io/575_Presentation/#12)?*  Now, the z-axis would just be pitch frequency.
-
-# Background
-
-The difficulty of assigning credit or blame to individuals when success is measured on the group level is not unique to baseball.  Firms measure their success by the company's profit line, but they must internally decide which employees helped or hindered the profit most of all.
-
-*Hopefully talk to Mark Anderson and find some examples of research on the effect of incentives at firms.*
-
-This paper will add to the literature by providing another example of how misaligned incentives can have unanticipated effects.  It shows that these exist even in the high stakes of a professional sporting event.  It also shows that they these influences can be seen even though every moment of a baseball game is heavily scrutinized by both professional and casual analysts.
+We theorize that pitchers may pitch differently when ERA applies (when the pitcher is responsible for the runners) than when it does not.  Specifically, we believe that when a pitcher is not responsible for the men on base, he will be more likely to pitch in "dangerous locations" --- over the middle of the plate where batters are easily able to hit the ball.  Conversely, when a pitcher is responsible for the men on base, he will be somewhat more likely to pitch around the edges of the strike zone where batters have more difficulty. 
 
 # Data
 
@@ -101,15 +108,15 @@ This paper will add to the literature by providing another example of how misali
 
 Starting in the 2006 playoffs, Major League Baseball began using pitch tracking cameras to record information about each pitch thrown in a game.  By 2008, these cameras were implemented in every ball park in the majors.  These cameras track velocity, movement, release point, spin, and pitch location at the moment each pitch enters the strike zone.  MLB's Gameday API provides these data (known as PITCHF/x data) for free in an XML format [online](http://gd2.mlb.com/components/game/mlb/).  They also provide additional data such as balls, strikes, outs, and runners on base.  For more information on the data provided by PITCHf/x, see [@fast2010heck].
 
-For example, on May 10, 2013 Jon Lester struck out Adam Lind with an 88 mph cut fastball to end the game.  The pitch was located low and inside on the left-handed Lind.  The video can be found [here](http://m.mlb.com/video/?content_id=27002963&topic_id=6479266).  Using the coordinates provided by the PITCHF/x data, the location of the pitch when it enters the strike zone can be plotted.  While not shown here, the data also tell us that there were two balls, two strikes, to outs, and no men on base when this pitch occurred.
+For example, on May 10, 2013 Jon Lester struck out Adam Lind with an 88 mph cut fastball to end the game.  The pitch was located low and inside on the left-handed Lind.  The video can be found [here](http://m.mlb.com/video/?content_id=27002963&topic_id=6479266).  Using the coordinates provided by the PITCHF/x data, the location of the pitch when it enters the strike zone can be plotted (see plot below).
 
-```{r lester-pitch, fig.cap="Location of final pitch from Lester to Lind.  The black box denotes a typical strike zone.  This plot is drawn from the catcher's point of view so Lind would be standing off to the right."}
+```{r lester-pitch, fig.cap="Location of final pitch from Lester to Lind.  The dashed box denotes a typical strike zone.  This plot is drawn from the catcher's point of view so Lind would be standing off to the right."}
 p <- data.frame( px = 0.634, pz = 2.305, sh = factor(1))
 ggplot(p) + 
-  geom_segment(aes(x=-0.75, y=1.75, xend = -0.75, yend = 3.35)) + 
-  geom_segment(aes(x=-0.75, y=3.35, xend = 0.75, yend = 3.35)) + 
-  geom_segment(aes(x=0.75, y=3.35, xend = 0.75, yend = 1.75)) + 
-  geom_segment(aes(x=0.75, y=1.75, xend = -0.75, yend = 1.75)) +
+  geom_segment(aes(x=-0.75, y=1.75, xend = -0.75, yend = 3.35), linetype = "dashed") + 
+  geom_segment(aes(x=-0.75, y=3.35, xend = 0.75, yend = 3.35), linetype = "dashed") + 
+  geom_segment(aes(x=0.75, y=3.35, xend = 0.75, yend = 1.75), linetype = "dashed") + 
+  geom_segment(aes(x=0.75, y=1.75, xend = -0.75, yend = 1.75), linetype = "dashed") +
   geom_point(aes(x=px, y=pz, shape = sh), size = I(4)) + 
   scale_shape(solid = F, guide = FALSE) + 
   xlim(-1.5, 1.5) + ylim(1, 4) + 
@@ -122,13 +129,13 @@ Using the `pitchRx` R package [@sievert2014package], the regular season PITCHF/x
 
 ## Cleaned
 
-The question of interest for this project is whether baseball pitchers pitch differently when they are responsible for the runners on base.  We began by extracting all the pitches thrown when runners were on base.  Therefore, in our data, each observation is a single pitch that occurred when there was at least one runner on base.  For each observation, we recorded whether the pitcher was responsible for the men on base.  In situations where there were multiple men on base and the pitcher was responsible for some but not all of them, the pitcher was deemed responsible.  
+The question of interest for this project is whether baseball pitchers pitch differently when they are responsible for the runners on base.  I began by extracting all the pitches thrown when runners were on base.  Therefore, in the data, each observation is a single pitch that occurred when there was at least one runner on base.  
 
-*Does this make sense?*
+In 2014, there were `r nrow(resp_dat)` of these pitches.  For each observation, I recorded whether the pitcher was responsible for the men on base.  In situations where there were multiple men on base and the pitcher was responsible for some but not all of them, the pitcher was deemed responsible.  
 
-A pitcher was deemed responsible if, according to the MLB Official Rules, the pitcher would not be held accountable if the runner had scored.  There are several circumstances under which a pitcher would not be held accountable.  They are briefly summarized below.  For further explanation, see (http://mlb.mlb.com/mlb/official_info/official_rules/official_scorer_10.jsp).
+A pitcher was deemed responsible if, according to the MLB Official Rules, the pitcher would not be held accountable if the runner had scored.  There are several circumstances under which a pitcher would not be held accountable.  They are briefly summarized below.  For further explanation, see [the official MLB scoring rules (http://mlb.mlb.com/mlb/official_info/official_rules/official_scorer_10.jsp).
 
-1) batter reaches on a hit or otherwise after his time at bat is prolonged by a muffed foul fly (can't actually determine this from PITCHf/x)
+1) batter reaches on a hit or otherwise after his time at bat is prolonged by a muffed foul fly.  This cannot be determined from PITCHF/x.  It is a very infrequent event so I chose to ignore these occurrences.
 2) batter reaches because of interference or obstruction
 3) batter reaches because of any fielding error
 4) the inning is prolonged because of a fielding error
@@ -138,12 +145,12 @@ This resulted in `r resp_dat %>% filter(resp_pit == "resp") %>% nrow()` pitches 
 
 ```{r data_sample, results='markup'}
 resp_dat %>% 
-  head() 
+  select(gameday_link, num, id, px, pz, resp_pit, p_throws, stand)
 ```
 
-In baseball, there are both left-handed and right-handed batters and left-handed and right-handed pitchers.  Pitch locations differ for each of these handedness combinations (see plot below) so the data can be separated into four different pairs of handedness.  
+In baseball, there are both left-handed and right-handed batters and left-handed and right-handed pitchers.  Pitch locations differ for each of these handedness combinations (see plot below).  It appears that pitchers like to stay away from batters regardless of the pitcher's throwing hand.  Visually, there appear to be only slight differences between the locations of pitches thrown by left and right handed pitchers.  While these differences are slight, there are substantial differences in mindset and approach between left and right handed pitchers.  Due to these differences, the data were separated into four different pairs of handedness.  
 
-```{r handedness_density, fig.height=8, fig.width=8}
+```{r handedness_density, fig.height=12, fig.width=12, fig.cap="Heat maps for each comboniation of pitcher and batter handedness.  Eact plot corresponds to the pitch locations for one conbination.  Batter's handedness is partitioned on the left and right, while pitcher handedness is partitioned by top and bottom.  Darker, redder areas indicate that more pitches are thrown in those areas."}
 p1 <- ggplot(resp_dat, aes(x = px, y = pz)) + 
   stat_density2d(geom = "tile", contour = FALSE, 
                aes(fill = ..density.., alpha = ..density..)) + 
@@ -161,17 +168,17 @@ p1 <- ggplot(resp_dat, aes(x = px, y = pz)) +
 p1
 ```
 
-To simplify the analysis for this writing project, only pitches thrown by left-handed pitchers to left-handed batters were considered.  This handedness pair was chosen for two reasons.  It is the most infrequent combination.  It, therefore, presented the smallest and easiest data to analyze.  It was also the handedness pair that provide the most suggestive results during early exploration so most of the effort was put into understanding these data.  Data were cleaned using the `dplyr` R package [@wickham2014dplyr].
+To simplify the analysis for this writing project, only pitches thrown by left-handed pitchers to left-handed batters were considered.  This handedness combination was chosen for two reasons.  It is the most infrequent combination so it presented the smallest and easiest data set to analyze.  It was also the handedness pair that provide the most suggestive results during early exploration so most of the effort was put into understanding these data.  Data were cleaned using the `dplyr` R package [@wickham2014dplyr].
 
 # Methodology
 
 ## How to Test the Idea
 
-The plot below shows a 2d kernel density estimate of pitch location in 2014 for left handed pitchers vs left handed batters [@venables2002modern].  This estimate is made by constructing a two dimensional $n \times n$ grid of the strike zone where $n$ represents the number of grid points.  At each grid point, the pitch density (i.e. the relative likelihood that a pitch is thrown in this location) is calculated for each of these grid points.  
+The plot below shows a 2d kernel density estimate of pitch location in 2014 for left handed pitchers vs left handed batters.  This estimate is made by constructing a two dimensional $n \times n$ grid of the strike zone where $n$ represents the number of grid points.  At each grid point, the pitch density (i.e. the relative likelihood that a pitch is thrown in this location) is calculated for each of these grid points.  
 
-*should I explain how densities are calculated?*
+In one dimension, the density for a single point ($x$) is calculated by taking a weighted average of the density of points near $x$.  By weighting points near $x$ more heavily, densities will be larger if there are more points near $x$.  For more details, see [@higgins2004introduction].  This process extends to two dimensions by taking a weighted average of the density of points in to dimensions, rather than just one.  Density estimates were obtained using the `MASS` package in R [@venables2002modern].
 
-```{r lvl_density}
+```{r lvl_density, fig.cap="Pitch locations when left handed pitchers face left handed batters."}
 p2 <- ggplot(lvl_resp, aes(x = px, y = pz)) + 
   stat_density2d(geom = "tile", contour = FALSE, 
                aes(fill = ..density.., alpha = ..density..)) + 
@@ -188,49 +195,37 @@ p2 <- ggplot(lvl_resp, aes(x = px, y = pz)) +
 p2
 ```
 
+To test the hypothesis that there is no difference in pitch location when pitchers are responsible vs when they are not, we need to see if pitch location is different when pitchers are responsible versus when they are not.  An estimated density surface for both of these situations is plotted below.  In both settings, pitchers tend to stay low and away from the batters.  The estimates are similar, but it does appear that pitches are more concentrated when pitchers are not responsible.  When pitchers are responsible, they spread out the location of their pitches a bit more.    
 
-This plot is from the catcher's perspective so the batter stands on the right side of the plot.  It appears that most pitches are thrown in the strikezone, down, and away from the batter.  
 
-To test the hypothesis that there is no difference in pitch location when pitchers are responsible vs when they are not, we need to see if pitch location is different when pitchers are responsible versus when they are not.  An estimated density surface for both of these situations are plotted below along with the difference in the two densities.
+```{r density_comp, fig.height=6, fig.width=12, fig.cap="Pitch densities based on 117766 pitches when the pitcher is responsible for at least one of the men on base and 8806 pitches when the pitcher is not responsible for any of the men on base.  The density estimate on the left is when pitchers are not responsible for the men on base; on the right, pitchers are responsible for the men on base."}
+# density plot for both responsibilities
+p_dens <- lvl_resp %>% 
+  ggplot(data = ., aes(x = px, y = pz)) + 
+  stat_density2d(geom = "tile", contour = FALSE, 
+               aes(fill = ..density.., alpha = ..density..)) + 
+  geom_segment(aes(x=-0.8, y=1.5, xend = -0.8, yend = 3.5), linetype = "dashed") + 
+  geom_segment(aes(x=-0.8, y=3.5, xend = 0.8, yend = 3.5), linetype = "dashed") + 
+  geom_segment(aes(x=0.8, y=3.5, xend = 0.8, yend = 1.5), linetype = "dashed") + 
+  geom_segment(aes(x=0.8, y=1.5, xend = -0.8, yend = 1.5), linetype = "dashed") + 
+  facet_wrap(~resp_pit) + 
+  guides(fill = FALSE, alpha = FALSE) + theme_bw() + 
+  scale_fill_gradient(low = "#FF99FF", high = "#FF0000") + 
+  xlim(-1.5, 1.5) + ylim(1, 4) + 
+  labs(x = "Horizontal Location", 
+       y = "Vertical Location", 
+       title = "Pitch Densities when Pitchers are Responsible")
+p_dens
+```
 
-```{r density_comp, fig.height=8, fig.width=8}
+Two visualizations of the differences in densities are plotted below.  Both show that the surface is not very flat, but there are no strong patterns immediately obvious.  One trend that is interesting is that from the top-middle of the strikezone, there seems to be a constant trend of large, negative differences that runs diagonally towards the middle-outer part of the strikezone.  This is a very strange result that could potentially be interesting.
+
+```{r density_diff, fig.height=6, fig.width=12, fig.cap="Differences in the two density estimates.  Differences at each grid point are calculated as the density when pitchers are not responsible minus the density when they are responsible."}
 # observed difference in densities
 obs_diff <- lvl_resp %>% 
   filter(px > -1.5, px < 1.5, pz > 1, pz < 4) %>% 
   dens_diff(100, data = .)
 
-# density plot for responsible pitchers
-p_resp <- lvl_resp %>% 
-  filter(resp_pit == "resp") %>% 
-  ggplot(data = ., aes(x = px, y = pz)) + 
-  stat_density2d(geom = "tile", contour = FALSE, 
-               aes(fill = ..density.., alpha = ..density..)) + 
-  geom_segment(aes(x=-0.8, y=1.5, xend = -0.8, yend = 3.5)) + 
-  geom_segment(aes(x=-0.8, y=3.5, xend = 0.8, yend = 3.5)) + 
-  geom_segment(aes(x=0.8, y=3.5, xend = 0.8, yend = 1.5)) + 
-  geom_segment(aes(x=0.8, y=1.5, xend = -0.8, yend = 1.5)) + 
-  guides(fill = FALSE, alpha = FALSE) + theme_bw() + 
-  scale_fill_gradient(low = "#FF99FF", high = "#FF0000") + 
-  xlim(-1.5, 1.5) + ylim(1, 4) + 
-  labs(x = "Horizontal Location", 
-       y = "Vertical Location", 
-       title = "Pitch Location when Pitchers are Responsible")
-# density plot when pitchers aren't responsible
-p_not <- lvl_resp %>% 
-  filter(resp_pit == "not") %>% 
-  ggplot(data = ., aes(x = px, y = pz)) + 
-  stat_density2d(geom = "tile", contour = FALSE, 
-               aes(fill = ..density.., alpha = ..density..)) + 
-  geom_segment(aes(x=-0.8, y=1.5, xend = -0.8, yend = 3.5)) + 
-  geom_segment(aes(x=-0.8, y=3.5, xend = 0.8, yend = 3.5)) + 
-  geom_segment(aes(x=0.8, y=3.5, xend = 0.8, yend = 1.5)) + 
-  geom_segment(aes(x=0.8, y=1.5, xend = -0.8, yend = 1.5)) + 
-  guides(fill = FALSE, alpha = FALSE) + theme_bw() + 
-  scale_fill_gradient(low = "#FF99FF", high = "#FF0000") + 
-  xlim(-1.5, 1.5) + ylim(1, 4) + 
-  labs(x = "Horizontal Location", 
-       y = "Vertical Location", 
-       title = "Pitch Location when Pitchers are not Responsible")
 # observed difference in densities
 p_diff <- obs_diff %>% 
   data.frame() %>% tbl_df() %>% 
@@ -238,39 +233,41 @@ p_diff <- obs_diff %>%
   gather(pz, diff, -px) %>% 
   mutate(pz = pz %>% 
            str_replace_all("X", "") %>% 
-           as.numeric()) %>% 
+           as.numeric(), 
+         px = my_rescale(px, -1.5, 1.5), 
+         pz = my_rescale(pz, 1, 4)) %>% 
   ggplot(data = ., aes(x = px, y = pz)) + 
   geom_point(aes(colour = diff)) + 
-#   geom_segment(aes(x=-0.8, y=1.5, xend = -0.8, yend = 3.5)) + 
-#   geom_segment(aes(x=-0.8, y=3.5, xend = 0.8, yend = 3.5)) + 
-#   geom_segment(aes(x=0.8, y=3.5, xend = 0.8, yend = 1.5)) + 
-#   geom_segment(aes(x=0.8, y=1.5, xend = -0.8, yend = 1.5)) + 
+  geom_segment(aes(x=-0.8, y=1.5, xend = -0.8, yend = 3.5), linetype = "dashed") + 
+  geom_segment(aes(x=-0.8, y=3.5, xend = 0.8, yend = 3.5), linetype = "dashed") + 
+  geom_segment(aes(x=0.8, y=3.5, xend = 0.8, yend = 1.5), linetype = "dashed") + 
+  geom_segment(aes(x=0.8, y=1.5, xend = -0.8, yend = 1.5), linetype = "dashed") + 
   guides(fill = FALSE, alpha = FALSE) + theme_bw() + 
   scale_colour_gradient(low = "#FF99FF", high = "#FF0000") + 
-#   xlim(-1.5, 1.5) + ylim(1, 4) + 
   labs(x = "Horizontal Location", 
        y = "Vertical Location", 
        title = "Difference in Pitch Densities")
-grid.arrange(p_resp, p_not, p_diff, ncol = 2)
+# wireframe plot
+p_wirediff <- wireframe(obs_diff, shade = T, scales = list(arrows = F), 
+                        xlab = "Horzontal Location", ylab = "Vertical Location", zlab = "Density Difference")
+grid.arrange(p_diff, p_wirediff, ncol = 2)
 ```
-
-In both settings, pitchers do tend to stay low and away from batters.  However, it does appear that pitches are more concentrated when pitchers are not responsible.  When pitchers are responsible, they spread out the location of their pitches a bit more.  On the far right, the magnitude of the difference between the two density estimates is plotted.  It appears that there are some differences in the estimates.  
 
 ## Permutation Testing
 
 For this analysis, the null hypothesis is that the density surfaces in the two situations are the same, and the alternative is that they are different. According to that null hypothesis, pitch location is not related to whether or not pitchers are responsible for the men on base.  Therefore, under the null hypothesis, the labels are arbitrary and have no meaning.  
 
-In this setting, permutation testing can be used to help test these hypotheses.  Because the labels are arbitrarily assigned under the null, they can be permuted (i.e. randomly reassigned) to form a permuted dataset which is just as likely have occurred under the null hypothesis.  By repeating this process many times, a distribution of permuted differences in densities can be constructed.  This distribution represents the likely values of the density surface at each grid point under the null hypothesis.  The observed difference in densities can be compared to this distribution of permuted differences in densities at each grid point.  In these comparisons, the proportion of times a permuted difference is more extreme than the observed difference becomes the p-value.  This creates a grid of $n \times n$ p-values.
+In this setting, permutation testing can be used to help test these hypotheses.  Because the labels are arbitrarily assigned under the null, they can be permuted (i.e. randomly reassigned) to form a permuted dataset which (under the null hypothesis) is just as likely have occurred as the original dataset.  By repeating this process many times, a distribution of permuted differences in densities can be constructed.  This distribution represents the likely values of the density surface at each grid point under the null hypothesis.  The observed difference in densities can be compared to this distribution of permuted differences in densities at each grid point.  In these comparisons, the proportion of times a permuted difference is more extreme than the observed difference becomes the p-value.  This creates a grid of $n \times n$ p-values.
 
 ## Adjusting for Multiple Testing
 
-Analyzing $n \times n$ p-values creates a multiple testing scenario.  Testing each p-value at a given significance level ($\alpha$), sets the probability of rejecting the null hypothesis when it is true to be $(100 * \alpha)\%$.  This controls the Type I Error Probability for any single test.  So for each of the $n \times n$ p-values the Type I Error rate is controlled for that test.  For all of the tests, however, the *family-wise error rate* (the probability of a Type I error for any of the $n \times n$ tests) is not controlled.  A multiple correction procedure was implemented to hold the family-wise error rate constant.
+Analyzing $n \times n$ p-values creates a multiple testing scenario.  Assume that these data would be tested at a fixed level ($\alpha$) so that the null hypothesis would be rejected if $p-value < \alpha$.  Testing each p-value at this fixed level sets the probability of rejecting the null hypothesis when it is true to be $100 * (1 - \alpha)$%.  Since the focus of this analysis is not to analyze any specific point or points on the grid, but rather to analyze the entire grid of p-values a multiple correction procedure was implemented.  This controls the family-wise error rate (the probability of at least one Type I error in any of the $n \times n$ grids).
 
-**More discussion! about the actual procedure we'll use(?)**
+Initially, a Bonferroni correction was implemented.  This correction involves inflating the p-values by $2k$ where $k$ is the number of tests that were run.  Since a $n \times n$ grid was used, there were $n^2$ tests performed.  So all of the p-values will be inflated by $2 \times n^2$ using the Bonferroni correction.
 
 # Results
 
-After running 1000 permutation on a grid of $100 \times 100$ points, a grid of $100 \times 100$ p-values was obtained.  This grid is visualized below.  Blues and purples suggest darker p-values while yellows and reds  suggest smaller p-values.  Larger rows are on the inner half of the plate, and larger columns are higher in the strikezone.
+A grid of $100 \times 100$ points was used to estimate pitch densities in each situation.  $1000$ permutation were run which resulted in a grid of $100 \times 100$ p-values.  This grid is visualized below.  Blues and purples suggest darker p-values while yellows and reds  suggest smaller p-values.  Larger rows are on the inner half of the plate, and larger columns are higher in the strikezone.
 
 ```{r perm_pvals, eval=FALSE}
 set.seed(10)
@@ -280,7 +277,6 @@ pvals <- perm_pvals(10000, 75, lvl_resp)
 ```
 ```{r raw_pvals}
 load("data/2014-pitchfx-data/pvalues.RData")
-library(lattice)
 wireframe(pvals, shade = T, scales = list(arrows = F))
 ```
 
@@ -290,7 +286,7 @@ Continuing to move up and away in the strikezone, the p-values once again rise r
 
 ## Bonferonni Correction
 
-As noted previously, with this many p-values some sort of correction must be used.  To begin, a Bonferroni correction was implemented.  This correction involves inflating the p-values by $2k$ where $k$ is the number of tests that were run.  Since a $100 \times 100$ grid was used, there were 10000 tests performed.  So all of the p-values must be inflated by 20000.  This results in the following adjusted grid of p-values.
+As noted previously, with this many p-values some sort of correction must be used.  The Bonferroni correction was first implemented, and it resulted in the following adjusted grid of p-values.
 
 ```{r bonf_pvals}
 # adjusting pvalues for multiple comparisons
@@ -312,6 +308,10 @@ bon_long %>% wireframe(shade = T, scales = list(arrows = F))
 ```
 
 Bonferroni is a very conservative correction method so we will be unable to detect any differences using it.  In fact, there were not enough tests run to detect a single difference using these data because all the p-values were inflated up to one.  More subtle methods of correction will have to be used to determine if there are meaningful differences in these data.
+
+# Conculsion
+
+I will write this section up once we're sure that this is the method we want to use for this writing project.
 
 # References
 
